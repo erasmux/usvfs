@@ -40,6 +40,8 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #pragma warning (pop)
 #include <fmt/format.h>
 #include <codecvt>
+#include <stdio.h>
+#include <Psapi.h>
 
 
 namespace bfs = boost::filesystem;
@@ -53,6 +55,8 @@ usvfs::HookManager *manager = nullptr;
 usvfs::HookContext *context = nullptr;
 HMODULE dllModule = nullptr;
 PVOID exceptionHandler = nullptr;
+CrashDumpsType usvfs_dump_type = CrashDumpsType::None;
+std::wstring usvfs_dump_path;
 
 typedef std::codecvt_utf8_utf16<wchar_t> u8u16_convert;
 
@@ -163,45 +167,74 @@ extern "C" DLLEXPORT void WINAPI SetLogLevel(LogLevel level)
 // Structured Exception handling
 //
 
-void createMiniDump(PEXCEPTION_POINTERS exceptionPtrs)
+std::wstring generate_minidump_name(const wchar_t* dmpPath)
+{
+  DWORD pid = GetCurrentProcessId();
+  wchar_t pname[100];
+  if (GetModuleBaseName(GetCurrentProcess(), NULL, pname, _countof(pname)) == 0)
+    return std::wstring();
+
+  // find an available name:
+  wchar_t dmpFile[MAX_PATH];
+  int count = 0;
+  _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu.dmp", dmpPath, pname, pid);
+  while (winapi::ex::wide::fileExists(dmpFile)) {
+    if (++count > 99)
+      return std::wstring();
+    _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu_%02d.dmp", dmpPath, pname, pid, count);
+  }
+  return dmpFile;
+}
+
+void createMiniDumpImpl(PEXCEPTION_POINTERS exceptionPtrs, HMODULE dbgDLL)
 {
   typedef BOOL (WINAPI *FuncMiniDumpWriteDump)(HANDLE process, DWORD pid, HANDLE file, MINIDUMP_TYPE dumpType,
                                                const PMINIDUMP_EXCEPTION_INFORMATION exceptionParam,
                                                const PMINIDUMP_USER_STREAM_INFORMATION userStreamParam,
                                                const PMINIDUMP_CALLBACK_INFORMATION callbackParam);
-  HMODULE dbgDLL = LoadLibraryW(L"dbghelp.dll");
 
-  static const int errorLen = 200;
-  char errorBuffer[errorLen + 1];
-  memset(errorBuffer, '\0', errorLen + 1);
+  // notice we avoid logging here on purpose because this is called from the VEHandler
+  // and the logger can crash it in extreme cases.
+  winapi::ex::wide::createPath(usvfs_dump_path.c_str());
 
-  if (dbgDLL) {
-    FuncMiniDumpWriteDump funcDump = reinterpret_cast<FuncMiniDumpWriteDump>(GetProcAddress(dbgDLL, "MiniDumpWriteDump"));
-    if (funcDump) {
-      //std::wstring dmpPath = winapi::wide::getModuleFileName(dllModule) + L"_" + std::to_wstring(time(nullptr)) + L".dmp";
-#if BOOST_ARCH_X86_64
-      std::wstring dmpPath = winapi::wide::getKnownFolderPath(FOLDERID_LocalAppData) + L"\\usvfs\\uvsfs_x64.dmp";
-#else
-      std::wstring dmpPath = winapi::wide::getKnownFolderPath(FOLDERID_LocalAppData) + L"\\usvfs\\uvsfs_x86.dmp";
-#endif
-      std::wstring parent = bfs::path(dmpPath).parent_path().wstring();
-      winapi::ex::wide::createPath(parent.c_str());
-      HANDLE dumpFile = winapi::wide::createFile(dmpPath).createAlways().access(GENERIC_WRITE).share(FILE_SHARE_WRITE)();
-      if (dumpFile != INVALID_HANDLE_VALUE) {
-        _MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
-        exceptionInfo.ThreadId = GetCurrentThreadId();
-        exceptionInfo.ExceptionPointers = exceptionPtrs;
-        exceptionInfo.ClientPointers = FALSE;
+  auto dmpName = generate_minidump_name(usvfs_dump_path.c_str());
+  if (dmpName.empty())
+    return;
 
-        BOOL success = funcDump(GetCurrentProcess(), GetCurrentProcessId(), dumpFile, MiniDumpNormal,
-                                &exceptionInfo, nullptr, nullptr);
-        CloseHandle(dumpFile);
-      }
+  FuncMiniDumpWriteDump funcDump = reinterpret_cast<FuncMiniDumpWriteDump>(GetProcAddress(dbgDLL, "MiniDumpWriteDump"));
+  if (!funcDump)
+    return;
+
+  HANDLE dumpFile = winapi::wide::createFile(dmpName).createAlways().access(GENERIC_WRITE).share(FILE_SHARE_WRITE)();
+  if (dumpFile != INVALID_HANDLE_VALUE) {
+    DWORD type = MiniDumpNormal | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithProcessThreadData;
+    if (usvfs_dump_type == CrashDumpsType::Data)
+      type |= MiniDumpWithDataSegs;
+    if (usvfs_dump_type == CrashDumpsType::Full)
+      type |= MiniDumpWithFullMemory;
+
+    _MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
+    exceptionInfo.ThreadId = GetCurrentThreadId();
+    exceptionInfo.ExceptionPointers = exceptionPtrs;
+    exceptionInfo.ClientPointers = FALSE;
+
+    funcDump(GetCurrentProcess(), GetCurrentProcessId(), dumpFile, static_cast<MINIDUMP_TYPE>(type), &exceptionInfo, nullptr, nullptr);
+    CloseHandle(dumpFile);
+  }
+}
+
+void createMiniDump(PEXCEPTION_POINTERS exceptionPtrs)
+{
+  if (HMODULE dbgDLL = LoadLibraryW(L"dbghelp.dll"))
+  {
+    try {
+      createMiniDumpImpl(exceptionPtrs, dbgDLL);
+    }
+    catch (...) {
     }
     FreeLibrary(dbgDLL);
   }
 }
-
 
 LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
 {
@@ -238,15 +271,19 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
 {
   InitLoggingInternal(false, true);
 
+  const USVFSParameters *params = reinterpret_cast<USVFSParameters *>(parameters);
+  usvfs_dump_type = params->crashDumpsType;
+  usvfs_dump_path = ush::string_cast<std::wstring>(params->crashDumpsPath, ush::CodePage::UTF8);
+
   if (exceptionHandler == nullptr) {
-    exceptionHandler = ::AddVectoredExceptionHandler(0, VEHandler);
+    if (usvfs_dump_type != CrashDumpsType::None)
+      exceptionHandler = ::AddVectoredExceptionHandler(0, VEHandler);
   } else {
     spdlog::get("usvfs")->info("vectored exception handler already active");
     // how did this happen??
   }
 #pragma message("bug: if the ve handler is called, the process breaks")
 
-  USVFSParameters *params = reinterpret_cast<USVFSParameters *>(parameters);
   SetLogLevel(params->logLevel);
 
   spdlog::get("usvfs")

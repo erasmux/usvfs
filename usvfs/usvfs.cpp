@@ -167,7 +167,7 @@ extern "C" DLLEXPORT void WINAPI SetLogLevel(LogLevel level)
 // Structured Exception handling
 //
 
-std::wstring generate_minidump_name(const wchar_t* dmpPath)
+std::wstring generate_minidump_name(const wchar_t* dumpPath)
 {
   DWORD pid = GetCurrentProcessId();
   wchar_t pname[100];
@@ -177,16 +177,16 @@ std::wstring generate_minidump_name(const wchar_t* dmpPath)
   // find an available name:
   wchar_t dmpFile[MAX_PATH];
   int count = 0;
-  _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu.dmp", dmpPath, pname, pid);
+  _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu.dmp", dumpPath, pname, pid);
   while (winapi::ex::wide::fileExists(dmpFile)) {
     if (++count > 99)
       return std::wstring();
-    _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu_%02d.dmp", dmpPath, pname, pid, count);
+    _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu_%02d.dmp", dumpPath, pname, pid, count);
   }
   return dmpFile;
 }
 
-void createMiniDumpImpl(PEXCEPTION_POINTERS exceptionPtrs, HMODULE dbgDLL)
+int createMiniDumpImpl(PEXCEPTION_POINTERS exceptionPtrs, CrashDumpsType type, const wchar_t* dumpPath, HMODULE dbgDLL)
 {
   typedef BOOL (WINAPI *FuncMiniDumpWriteDump)(HANDLE process, DWORD pid, HANDLE file, MINIDUMP_TYPE dumpType,
                                                const PMINIDUMP_EXCEPTION_INFORMATION exceptionParam,
@@ -195,45 +195,58 @@ void createMiniDumpImpl(PEXCEPTION_POINTERS exceptionPtrs, HMODULE dbgDLL)
 
   // notice we avoid logging here on purpose because this is called from the VEHandler
   // and the logger can crash it in extreme cases.
-  winapi::ex::wide::createPath(usvfs_dump_path.c_str());
+  // additionally it is also called for MO crashes which use it's own logging.
+  winapi::ex::wide::createPath(dumpPath);
 
-  auto dmpName = generate_minidump_name(usvfs_dump_path.c_str());
+  auto dmpName = generate_minidump_name(dumpPath);
   if (dmpName.empty())
-    return;
+    return 4;
 
   FuncMiniDumpWriteDump funcDump = reinterpret_cast<FuncMiniDumpWriteDump>(GetProcAddress(dbgDLL, "MiniDumpWriteDump"));
   if (!funcDump)
-    return;
+    return 5;
 
   HANDLE dumpFile = winapi::wide::createFile(dmpName).createAlways().access(GENERIC_WRITE).share(FILE_SHARE_WRITE)();
   if (dumpFile != INVALID_HANDLE_VALUE) {
-    DWORD type = MiniDumpNormal | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithProcessThreadData;
-    if (usvfs_dump_type == CrashDumpsType::Data)
-      type |= MiniDumpWithDataSegs;
-    if (usvfs_dump_type == CrashDumpsType::Full)
-      type |= MiniDumpWithFullMemory;
+    DWORD dumpType = MiniDumpNormal | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithProcessThreadData;
+    if (type == CrashDumpsType::Data)
+      dumpType |= MiniDumpWithDataSegs;
+    if (type == CrashDumpsType::Full)
+      dumpType |= MiniDumpWithFullMemory;
 
     _MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
     exceptionInfo.ThreadId = GetCurrentThreadId();
     exceptionInfo.ExceptionPointers = exceptionPtrs;
     exceptionInfo.ClientPointers = FALSE;
 
-    funcDump(GetCurrentProcess(), GetCurrentProcessId(), dumpFile, static_cast<MINIDUMP_TYPE>(type), &exceptionInfo, nullptr, nullptr);
+    BOOL success =
+      funcDump(GetCurrentProcess(), GetCurrentProcessId(), dumpFile, static_cast<MINIDUMP_TYPE>(dumpType), &exceptionInfo, nullptr, nullptr);
+
     CloseHandle(dumpFile);
+
+    return success ? 0 : 7;
   }
+  else
+    return 6;
 }
 
-void createMiniDump(PEXCEPTION_POINTERS exceptionPtrs)
+int WINAPI CreateMiniDump(PEXCEPTION_POINTERS exceptionPtrs, CrashDumpsType type, const wchar_t* dumpPath)
 {
+  if (type == CrashDumpsType::None)
+    return 0;
+
+  int res = 1;
   if (HMODULE dbgDLL = LoadLibraryW(L"dbghelp.dll"))
   {
     try {
-      createMiniDumpImpl(exceptionPtrs, dbgDLL);
+      res = createMiniDumpImpl(exceptionPtrs, type, dumpPath, dbgDLL);
     }
     catch (...) {
+      res = 2;
     }
     FreeLibrary(dbgDLL);
   }
+  return res;
 }
 
 LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
@@ -258,7 +271,7 @@ LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
   HookLib::TrampolinePool::instance().forceUnlockBarrier();
   HookLib::TrampolinePool::instance().setBlock(true);
 
-  createMiniDump(exceptionPtrs);
+  CreateMiniDump(exceptionPtrs, usvfs_dump_type, usvfs_dump_path.c_str());
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -282,7 +295,6 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
     spdlog::get("usvfs")->info("vectored exception handler already active");
     // how did this happen??
   }
-#pragma message("bug: if the ve handler is called, the process breaks")
 
   SetLogLevel(params->logLevel);
 
@@ -696,7 +708,15 @@ void WINAPI USVFSInitParameters(USVFSParameters *parameters,
   parameters->logLevel = logLevel;
   parameters->crashDumpsType = crashDumpsType;
   strncpy_s(parameters->instanceName, instanceName, _TRUNCATE);
-  strncpy_s(parameters->crashDumpsPath, crashDumpsPath, _TRUNCATE);
+  if (crashDumpsPath && *crashDumpsPath && strlen(crashDumpsPath) < _countof(parameters->crashDumpsPath)) {
+    memcpy(parameters->crashDumpsPath, crashDumpsPath, strlen(crashDumpsPath));
+    parameters->crashDumpsType = crashDumpsType;
+  }
+  else {
+    // crashDumpsPath invalid or overflow of USVFSParameters variable so disable crash dumps:
+    parameters->crashDumpsPath[0] = 0;
+    parameters->crashDumpsType = CrashDumpsType::None;
+  }
   // we can't use the whole buffer as we need a few bytes to store a running
   // counter
   strncpy_s(parameters->currentSHMName, 60, instanceName, _TRUNCATE);

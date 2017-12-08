@@ -200,6 +200,9 @@ public:
 
   void blacklistExecutable(const std::wstring &executableName);
 
+  void setLogLevel(LogLevel level);
+  void setCrashDumpsType(CrashDumpsType type);
+
   void updateParameters() const;
 
   void registerDelayed(std::future<int> delayed);

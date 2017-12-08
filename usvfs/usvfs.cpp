@@ -157,10 +157,20 @@ extern "C" DLLEXPORT bool WINAPI GetLogMessages(char *buffer, size_t size,
   }
 }
 
-extern "C" DLLEXPORT void WINAPI SetLogLevel(LogLevel level)
+void SetLogLevel(LogLevel level)
 {
   spdlog::get("usvfs")->set_level(ConvertLogLevel(level));
   spdlog::get("hooks")->set_level(ConvertLogLevel(level));
+}
+
+extern "C" void WINAPI USVFSUpdateParams(LogLevel level, CrashDumpsType type)
+{
+  // update actual values used:
+  usvfs_dump_type = type;
+  SetLogLevel(level);
+  // update parameters in context so spawned process will inherit changes:
+  context->setLogLevel(level);
+  context->setCrashDumpsType(type);
 }
 
 //

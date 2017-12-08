@@ -118,9 +118,9 @@ DLLEXPORT BOOL WINAPI CreateProcessHooked(
 DLLEXPORT bool WINAPI GetLogMessages(LPSTR buffer, size_t size, bool blocking = false);
 
 /**
- * @brief change the log level
+ * @brief Used to change parameters which can be changed in runtime
  */
-DLLEXPORT void WINAPI SetLogLevel(LogLevel level);
+DLLEXPORT void WINAPI USVFSUpdateParams(LogLevel level, CrashDumpsType type);
 
 /**
  * retrieves a readable representation of the vfs tree

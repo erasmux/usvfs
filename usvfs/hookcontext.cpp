@@ -168,12 +168,20 @@ HookContext::Ptr HookContext::writeAccess(const char*)
   return Ptr(s_Instance, unlock);
 }
 
+void HookContext::setLogLevel(LogLevel level)
+{
+  m_Parameters->logLevel = level;
+}
+
+void HookContext::setCrashDumpsType(CrashDumpsType type)
+{
+  m_Parameters->crashDumpsType = type;
+}
+
 void HookContext::updateParameters() const
 {
   m_Parameters->currentSHMName = m_Tree.shmName().c_str();
   m_Parameters->currentInverseSHMName = m_InverseTree.shmName().c_str();
-
-  m_Parameters->logLevel = usvfs::log::ConvertLogLevel(spdlog::get("usvfs")->level());
 }
 
 USVFSParameters HookContext::callParameters() const

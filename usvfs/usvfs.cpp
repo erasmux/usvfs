@@ -651,15 +651,19 @@ VOID WINAPI PrintDebugInfo()
 
 void WINAPI USVFSInitParameters(USVFSParameters *parameters,
                                 const char *instanceName, bool debugMode,
-                                LogLevel logLevel)
+                                LogLevel logLevel,
+                                CrashDumpsType crashDumpsType,
+                                const char *crashDumpsPath)
 {
   parameters->debugMode = debugMode;
   parameters->logLevel = logLevel;
-  strncpy_s(parameters->instanceName, 64, instanceName, _TRUNCATE);
+  parameters->crashDumpsType = crashDumpsType;
+  strncpy_s(parameters->instanceName, instanceName, _TRUNCATE);
+  strncpy_s(parameters->crashDumpsPath, crashDumpsPath, _TRUNCATE);
   // we can't use the whole buffer as we need a few bytes to store a running
   // counter
   strncpy_s(parameters->currentSHMName, 60, instanceName, _TRUNCATE);
-  memset(parameters->currentInverseSHMName, '\0', 65);
+  memset(parameters->currentInverseSHMName, '\0', _countof(parameters->currentInverseSHMName));
   _snprintf(parameters->currentInverseSHMName, 60, "inv_%s", instanceName);
 }
 

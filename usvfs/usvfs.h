@@ -157,6 +157,9 @@ DLLEXPORT void __cdecl InitHooks(LPVOID userData, size_t userDataSize);
 
 DLLEXPORT void WINAPI USVFSInitParameters(USVFSParameters *parameters,
                                           const char *instanceName,
-                                          bool debugMode, LogLevel logLevel);
+                                          bool debugMode,
+                                          LogLevel logLevel,
+                                          CrashDumpsType crashDumpsType,
+                                          const char *crashDumpsPath);
 
 }

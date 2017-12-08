@@ -725,7 +725,7 @@ void WINAPI USVFSInitParameters(USVFSParameters *parameters,
   parameters->crashDumpsType = crashDumpsType;
   strncpy_s(parameters->instanceName, instanceName, _TRUNCATE);
   if (crashDumpsPath && *crashDumpsPath && strlen(crashDumpsPath) < _countof(parameters->crashDumpsPath)) {
-    memcpy(parameters->crashDumpsPath, crashDumpsPath, strlen(crashDumpsPath));
+    memcpy(parameters->crashDumpsPath, crashDumpsPath, strlen(crashDumpsPath)+1);
     parameters->crashDumpsType = crashDumpsType;
   }
   else {

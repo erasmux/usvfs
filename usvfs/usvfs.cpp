@@ -44,6 +44,50 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #include <Psapi.h>
 
 
+class DebugLog {
+public:
+  DebugLog() : file(nullptr) {}
+
+  void open(const char* label_)
+  {
+    std::ostringstream ost;
+    ost << R"(C:\Games\Skyrim_SE_mods\ModOrganizer\logs\debug_)" << ::GetCurrentProcessId() << "_" << label_ << ".log";
+    file = _fsopen(ost.str().c_str(), "wb", _SH_DENYWR);
+    if (!file) {
+      std::ostringstream ost2;
+      ost2 << "Failed to open debug log : " << ost.str().c_str() << " , " << GetLastError();
+      MessageBoxA(nullptr, ost2.str().c_str(), "DebugLog Error", MB_OK);
+    }
+  }
+
+  template<typename... Args>
+  void log(const char* fmt_, Args... args)
+  {
+    if (file)
+      fprintf(file, fmt_, args...);
+  }
+
+  template<typename... Args>
+  void log(const wchar_t* fmt_, Args... args)
+  {
+    if (file)
+      fwprintf(file, fmt_, args);
+  }
+
+  void close() {
+    if (file) {
+      fclose(file);
+      file = nullptr;
+    }
+  }
+
+  ~DebugLog() { close(); }
+private:
+  FILE * file;
+};
+
+DebugLog dbglog;
+
 namespace bfs = boost::filesystem;
 namespace ush = usvfs::shared;
 namespace bip = boost::interprocess;
@@ -93,6 +137,10 @@ char *SeverityShort(LogLevel lvl)
 
 void InitLoggingInternal(bool toConsole, bool connectExistingSHM)
 {
+  if (connectExistingSHM)
+    dbglog.open("init");
+  else
+    dbglog.open("logger");
   try {
     if (!toConsole && !SHMLogger::isInstantiated()) {
       if (connectExistingSHM) {
@@ -121,7 +169,9 @@ void InitLoggingInternal(bool toConsole, bool connectExistingSHM)
       logger->set_pattern("%H:%M:%S.%e <%P:%t> [%L] %v");
     }
     logger->set_level(spdlog::level::debug);
-  } catch (const std::exception&) {
+    dbglog.log("logger initialized successfull!\n");
+  } catch (const std::exception& e) {
+    dbglog.log("logger initialized failed : %s\n",e.what());
     // TODO should really report this
     //OutputDebugStringA((boost::format("init exception: %1%\n") % e.what()).str().c_str());
     if (spdlog::get("usvfs").get() == nullptr) {
@@ -142,15 +192,31 @@ void WINAPI InitLogging(bool toConsole)
 extern "C" DLLEXPORT bool WINAPI GetLogMessages(char *buffer, size_t size,
                                                 bool blocking)
 {
+  dbglog.log("GetLogMessages <%d,%s>\n",(int)size,blocking ? "true" : "false");
   buffer[0] = '\0';
   try {
     if (blocking) {
       SHMLogger::instance().get(buffer, size);
+      dbglog.log("block GetLogMessages successfull\n");
       return true;
     } else {
-      return SHMLogger::instance().tryGet(buffer, size);
+      bool res = SHMLogger::instance().tryGet(buffer, size);
+      if (res) {
+        if (strnlen(buffer, size) < size)
+          dbglog.log("GetLogMessages returning message : %s\n", buffer);
+        else {
+          std::vector<char> mybuf(size + 1);
+          memcpy(&mybuf[0], buffer, size);
+          dbglog.log("GetLogMessages returning NTLESS message : %s\n", &mybuf[0]);
+        }
+      }
+      else {
+        dbglog.log("GetLogMessages returning empty handed.\n");
+      }
+      return res;
     }
   } catch (const std::exception &e) {
+    dbglog.log("GetLogMessages failed : %s\n",e.what());
     _snprintf_s(buffer, size, _TRUNCATE, "Failed to retrieve log messages: %s",
                e.what());
     return false;
@@ -308,6 +374,14 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
     // how did this happen??
   }
 
+  dbglog.log("inithooks called %s in process %s:%lu (log level %d, dump type %d, dump path %s)\n",
+    params->instanceName,
+    winapi::ansi::getModuleFileName(nullptr).c_str(),
+    ::GetCurrentProcessId(),
+    static_cast<int>(params->logLevel),
+    static_cast<int>(params->crashDumpsType),
+    params->crashDumpsPath);
+
   spdlog::get("usvfs")
       ->info("inithooks called {0} in process {1}:{2} (log level {3}, dump type {4}, dump path {5})",
               params->instanceName,
@@ -317,8 +391,13 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
               static_cast<int>(params->crashDumpsType),
               params->crashDumpsPath);
 
+  dbglog.log("inithooks called logged.\n");
+
   try {
     manager = new usvfs::HookManager(*params, dllModule);
+
+    dbglog.log("HookManager successfully created.\nGoodbye and thanks for all the fish.\n");
+    dbglog.close();
 
     spdlog::get("usvfs")
       ->info("inithooks in process {0} successfull", ::GetCurrentProcessId());
@@ -334,6 +413,8 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
 */
     //context = manager->context();
   } catch (const std::exception &e) {
+    dbglog.log("HookManager init failed: %s\nGoodbye and farewell.\n", e.what());
+    dbglog.close();
     spdlog::get("usvfs")->debug("failed to initialise hooks: {0}", e.what());
   }
 }

@@ -67,13 +67,6 @@ public:
       fprintf(file, fmt_, args...);
   }
 
-  template<typename... Args>
-  void log(const wchar_t* fmt_, Args... args)
-  {
-    if (file)
-      fwprintf(file, fmt_, args...);
-  }
-
   void close() {
     if (file) {
       fclose(file);
@@ -575,7 +568,7 @@ bool assertPathExists(usvfs::RedirectionTreeContainer &table, LPCWSTR path)
 BOOL WINAPI VirtualLinkFile(LPCWSTR source, LPCWSTR destination,
                             unsigned int flags)
 {
-  dbglog.log(L"VirtualLinkFile <%s,%s,%x>\n", source, destination, flags);
+  dbglog.log("VirtualLinkFile <%s,%s,%x>\n", ush::string_cast<std::string>(source).c_str(), ush::string_cast<std::string>(destination).c_str(), flags);
   // TODO difference between winapi and ntdll api regarding system32 vs syswow64
   // (and other windows links?)
   try {
@@ -636,7 +629,7 @@ static usvfs::shared::TreeFlags convertRedirectionFlags(unsigned int flags)
 
 BOOL WINAPI VirtualLinkDirectoryStatic(LPCWSTR source, LPCWSTR destination, unsigned int flags)
 {
-  dbglog.log(L"VirtualLinkDirectoryStatic <%s,%s,%x>\n",source,destination,flags);
+  dbglog.log("VirtualLinkDirectoryStatic <%s,%s,%x>\n", ush::string_cast<std::string>(source).c_str(), ush::string_cast<std::string>(destination).c_str(), flags);
   // TODO change notification not yet implemented
   try {
     if ((flags & LINKFLAG_FAILIFEXISTS)

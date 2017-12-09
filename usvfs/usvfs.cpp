@@ -386,6 +386,10 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
 
   dbglog.log("inithooks called logged.\n");
 
+  Sleep(1000);
+
+  dbglog.log("sleep done.\n");
+
   try {
     manager = new usvfs::HookManager(*params, dllModule);
 

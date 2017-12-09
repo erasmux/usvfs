@@ -71,7 +71,7 @@ public:
   void log(const wchar_t* fmt_, Args... args)
   {
     if (file)
-      fwprintf(file, fmt_, args);
+      fwprintf(file, fmt_, args...);
   }
 
   void close() {
@@ -575,10 +575,12 @@ bool assertPathExists(usvfs::RedirectionTreeContainer &table, LPCWSTR path)
 BOOL WINAPI VirtualLinkFile(LPCWSTR source, LPCWSTR destination,
                             unsigned int flags)
 {
+  dbglog.log(L"VirtualLinkFile <%s,%s,%x>\n", source, destination, flags);
   // TODO difference between winapi and ntdll api regarding system32 vs syswow64
   // (and other windows links?)
   try {
     if (!assertPathExists(context->redirectionTable(), destination)) {
+      dbglog.log("VirtualLinkFile ERROR_PATH_NOT_FOUND\n");
       SetLastError(ERROR_PATH_NOT_FOUND);
       return FALSE;
     }
@@ -604,12 +606,14 @@ BOOL WINAPI VirtualLinkFile(LPCWSTR source, LPCWSTR destination,
       // the tree structure currently doesn't provide useful error codes but
       // this is currently the only reason
       // we would return a nullptr.
+      dbglog.log("VirtualLinkFile null res?!\n");
       SetLastError(ERROR_FILE_EXISTS);
       return FALSE;
     } else {
       return TRUE;
     }
   } catch (const std::exception &e) {
+    dbglog.log("VirtualLinkFile failed : %s",e.what());
     spdlog::get("usvfs")->error("failed to copy file {}", e.what());
     // TODO: no clue what's wrong
     SetLastError(ERROR_INVALID_DATA);
@@ -632,15 +636,18 @@ static usvfs::shared::TreeFlags convertRedirectionFlags(unsigned int flags)
 
 BOOL WINAPI VirtualLinkDirectoryStatic(LPCWSTR source, LPCWSTR destination, unsigned int flags)
 {
+  dbglog.log(L"VirtualLinkDirectoryStatic <%s,%s,%x>\n",source,destination,flags);
   // TODO change notification not yet implemented
   try {
     if ((flags & LINKFLAG_FAILIFEXISTS)
         && winapi::ex::wide::fileExists(destination)) {
+      dbglog.log("VirtualLinkDirectoryStatic ERROR_FILE_EXISTS\n");
       SetLastError(ERROR_FILE_EXISTS);
       return FALSE;
     }
 
     if (!assertPathExists(context->redirectionTable(), destination)) {
+      dbglog.log("VirtualLinkDirectoryStatic ERROR_PATH_NOT_FOUND\n");
       SetLastError(ERROR_PATH_NOT_FOUND);
       return FALSE;
     }
@@ -697,6 +704,7 @@ BOOL WINAPI VirtualLinkDirectoryStatic(LPCWSTR source, LPCWSTR destination, unsi
 
     return TRUE;
   } catch (const std::exception &e) {
+    dbglog.log("VirtualLinkDirectoryStatic failed : %s", e.what());
     spdlog::get("usvfs")->error("failed to copy file {}", e.what());
     // TODO: no clue what's wrong
     SetLastError(ERROR_INVALID_DATA);

@@ -13,6 +13,7 @@ SET(usvfs_HDRS
   semaphore.h
   stringcast_boost.h
   usvfs.h
+  crashcollection.h
   )
 
 SET(usvfs_SRCS
@@ -27,6 +28,7 @@ SET(usvfs_SRCS
   semaphore.cpp
   stringcast_boost.cpp
   usvfs.cpp
+  crashcollection.cpp
   )
 
 SET(usvfs_RCS

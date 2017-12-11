@@ -22,7 +22,7 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #include "hookmanager.h"
 #include "redirectiontree.h"
 #include "loghelpers.h"
-#include <DbgHelp.h>
+#include "crashcollection.h"
 #include <ctime>
 #include <shmlogger.h>
 #include <winapi.h>
@@ -54,9 +54,6 @@ using usvfs::log::ConvertLogLevel;
 usvfs::HookManager *manager = nullptr;
 usvfs::HookContext *context = nullptr;
 HMODULE dllModule = nullptr;
-PVOID exceptionHandler = nullptr;
-CrashDumpsType usvfs_dump_type = CrashDumpsType::None;
-std::wstring usvfs_dump_path;
 
 typedef std::codecvt_utf8_utf16<wchar_t> u8u16_convert;
 
@@ -166,127 +163,10 @@ void SetLogLevel(LogLevel level)
 extern "C" void WINAPI USVFSUpdateParams(LogLevel level, CrashDumpsType type)
 {
   // update actual values used:
-  usvfs_dump_type = type;
   SetLogLevel(level);
   // update parameters in context so spawned process will inherit changes:
   context->setLogLevel(level);
   context->setCrashDumpsType(type);
-}
-
-//
-// Structured Exception handling
-//
-
-std::wstring generate_minidump_name(const wchar_t* dumpPath)
-{
-  DWORD pid = GetCurrentProcessId();
-  wchar_t pname[100];
-  if (GetModuleBaseName(GetCurrentProcess(), NULL, pname, _countof(pname)) == 0)
-    return std::wstring();
-
-  // find an available name:
-  wchar_t dmpFile[MAX_PATH];
-  int count = 0;
-  _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu.dmp", dumpPath, pname, pid);
-  while (winapi::ex::wide::fileExists(dmpFile)) {
-    if (++count > 99)
-      return std::wstring();
-    _snwprintf_s(dmpFile, _TRUNCATE, L"%s\\%s-%lu_%02d.dmp", dumpPath, pname, pid, count);
-  }
-  return dmpFile;
-}
-
-int createMiniDumpImpl(PEXCEPTION_POINTERS exceptionPtrs, CrashDumpsType type, const wchar_t* dumpPath, HMODULE dbgDLL)
-{
-  typedef BOOL (WINAPI *FuncMiniDumpWriteDump)(HANDLE process, DWORD pid, HANDLE file, MINIDUMP_TYPE dumpType,
-                                               const PMINIDUMP_EXCEPTION_INFORMATION exceptionParam,
-                                               const PMINIDUMP_USER_STREAM_INFORMATION userStreamParam,
-                                               const PMINIDUMP_CALLBACK_INFORMATION callbackParam);
-
-  // notice we avoid logging here on purpose because this is called from the VEHandler
-  // and the logger can crash it in extreme cases.
-  // additionally it is also called for MO crashes which use it's own logging.
-  winapi::ex::wide::createPath(dumpPath);
-
-  auto dmpName = generate_minidump_name(dumpPath);
-  if (dmpName.empty())
-    return 4;
-
-  FuncMiniDumpWriteDump funcDump = reinterpret_cast<FuncMiniDumpWriteDump>(GetProcAddress(dbgDLL, "MiniDumpWriteDump"));
-  if (!funcDump)
-    return 5;
-
-  HANDLE dumpFile = winapi::wide::createFile(dmpName).createAlways().access(GENERIC_WRITE).share(FILE_SHARE_WRITE)();
-  if (dumpFile != INVALID_HANDLE_VALUE) {
-    DWORD dumpType = MiniDumpNormal | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithProcessThreadData;
-    if (type == CrashDumpsType::Data)
-      dumpType |= MiniDumpWithDataSegs;
-    if (type == CrashDumpsType::Full)
-      dumpType |= MiniDumpWithFullMemory;
-
-    _MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
-    exceptionInfo.ThreadId = GetCurrentThreadId();
-    exceptionInfo.ExceptionPointers = exceptionPtrs;
-    exceptionInfo.ClientPointers = FALSE;
-
-    BOOL success =
-      funcDump(GetCurrentProcess(), GetCurrentProcessId(), dumpFile, static_cast<MINIDUMP_TYPE>(dumpType), &exceptionInfo, nullptr, nullptr);
-
-    CloseHandle(dumpFile);
-
-    return success ? 0 : 7;
-  }
-  else
-    return 6;
-}
-
-int WINAPI CreateMiniDump(PEXCEPTION_POINTERS exceptionPtrs, CrashDumpsType type, const wchar_t* dumpPath)
-{
-  if (type == CrashDumpsType::None)
-    return 0;
-
-  int res = 1;
-  if (HMODULE dbgDLL = LoadLibraryW(L"dbghelp.dll"))
-  {
-    try {
-      res = createMiniDumpImpl(exceptionPtrs, type, dumpPath, dbgDLL);
-    }
-    catch (...) {
-      res = 2;
-    }
-    FreeLibrary(dbgDLL);
-  }
-  return res;
-}
-
-LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
-{
-  // NOTICE: don't use logger in VEHandler as it can cause another fault causing VEHandler
-  // to be called again and so on.
-
-  if (   (exceptionPtrs->ExceptionRecord->ExceptionCode  < 0x80000000)      // non-critical
-      || (exceptionPtrs->ExceptionRecord->ExceptionCode == 0xe06d7363)) {   // cpp exception
-    // don't report non-critical exceptions
-    return EXCEPTION_CONTINUE_SEARCH;
-  }
-  /*
-  if (((exceptionPtrs->ExceptionRecord->ExceptionFlags & EXCEPTION_NONCONTINUABLE) != 0) ||
-      (exceptionPtrs->ExceptionRecord->ExceptionCode == 0xe06d7363)) {
-    // don't want to break on non-critical exceptions. 0xe06d7363 indicates a C++ exception. why are those marked non-continuable?
-    return EXCEPTION_CONTINUE_SEARCH;
-  }
-  */
-
-  // disable our hooking mechanism to increase chances the dump writing won't crash
-  HookLib::TrampolinePool& trampPool = HookLib::TrampolinePool::instance();
-  if (&trampPool) { // need to test this in case of crash before TrampolinePool initialized
-    trampPool.forceUnlockBarrier();
-    trampPool.setBlock(true);
-  }
-
-  CreateMiniDump(exceptionPtrs, usvfs_dump_type, usvfs_dump_path.c_str());
-
-  return EXCEPTION_CONTINUE_SEARCH;
 }
 
 //
@@ -298,18 +178,10 @@ void __cdecl InitHooks(LPVOID parameters, size_t)
   InitLoggingInternal(false, true);
 
   const USVFSParameters *params = reinterpret_cast<USVFSParameters *>(parameters);
-  usvfs_dump_type = params->crashDumpsType;
-  usvfs_dump_path = ush::string_cast<std::wstring>(params->crashDumpsPath, ush::CodePage::UTF8);
+
+  CrashCollectionInitialize(params->crashDumpsType, ush::string_cast<std::wstring>(params->crashDumpsPath, ush::CodePage::UTF8).c_str());
 
   SetLogLevel(params->logLevel);
-
-  if (exceptionHandler == nullptr) {
-    if (usvfs_dump_type != CrashDumpsType::None)
-      exceptionHandler = ::AddVectoredExceptionHandler(0, VEHandler);
-  } else {
-    spdlog::get("usvfs")->info("vectored exception handler already active");
-    // how did this happen??
-  }
 
   spdlog::get("usvfs")
       ->info("inithooks called {0} in process {1}:{2} (log level {3}, dump type {4}, dump path {5})",
@@ -392,6 +264,8 @@ void WINAPI DisconnectVFS()
     context = nullptr;
     spdlog::get("usvfs")->debug("vfs unloaded");
   }
+
+  CrashCollectionCleanup();
 }
 
 
@@ -757,8 +631,6 @@ BOOL APIENTRY DllMain(HMODULE module,
       dllModule = module;
     } break;
     case DLL_PROCESS_DETACH: {
-      if (exceptionHandler)
-        ::RemoveVectoredExceptionHandler(exceptionHandler);
     } break;
     case DLL_THREAD_ATTACH: {
     } break;

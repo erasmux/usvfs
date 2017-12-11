@@ -5,6 +5,7 @@
 #include "../hookcontext.h"
 #include "../hookcallcontext.h"
 #include "../usvfs.h"
+#include "../crashcollection.h"
 #include <inject.h>
 #include <winapi.h>
 #include <winbase.h>
@@ -1871,4 +1872,23 @@ VOID WINAPI usvfs::hooks::ExitProcess(UINT exitCode)
   //  POST_REALCALL
 
   HOOK_END
+}
+
+LPTOP_LEVEL_EXCEPTION_FILTER WINAPI usvfs::hooks::SetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter)
+{
+  LPTOP_LEVEL_EXCEPTION_FILTER res = nullptr;
+
+  HOOK_START
+
+  if (CrashCollectionRegisteredUnhandledExceptionFilter())
+    res = CrashCollectionSetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
+  else { // we shouldn't get here since we don't hook this function in this case
+    PRE_REALCALL
+    res = ::SetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
+    POST_REALCALL
+  }
+
+  HOOK_END
+
+  return res;
 }

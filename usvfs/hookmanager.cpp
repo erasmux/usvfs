@@ -24,6 +24,7 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #include "hooks/ole32.h"
 #include "exceptionex.h"
 #include "usvfs.h"
+#include "crashcollection.h"
 #include <utility.h>
 #include <ttrampolinepool.h>
 #include <stdexcept>
@@ -278,6 +279,9 @@ void HookManager::initHooks()
   installHook(kbaseMod, k32Mod, "GetFileVersionInfoSizeExW", uhooks::GetFileVersionInfoSizeExW);
   installHook(kbaseMod, k32Mod, "FindFirstFileExA", uhooks::FindFirstFileExA);
   installHook(kbaseMod, k32Mod, "FindFirstFileExW", uhooks::FindFirstFileExW);
+
+  if (CrashCollectionRegisteredUnhandledExceptionFilter())
+    installHook(kbaseMod, k32Mod, "SetUnhandledExceptionFilter", uhooks::SetUnhandledExceptionFilter);
 
   HMODULE ntdllMod = GetModuleHandleA("ntdll.dll");
   spdlog::get("usvfs")->debug("ntdll.dll at {0:x}", reinterpret_cast<uintptr_t>(ntdllMod));

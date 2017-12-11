@@ -77,6 +77,8 @@ DLLEXPORT BOOL WINAPI WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR lpKe
 
 DLLEXPORT VOID WINAPI ExitProcess(UINT exitCode);
 
+DLLEXPORT LPTOP_LEVEL_EXCEPTION_FILTER WINAPI SetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter);
+
 }
 
 }

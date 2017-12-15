@@ -24,6 +24,9 @@
     <ClCompile Include="..\src\usvfs_helper\hookcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\usvfs_helper\redirectiontree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\usvfs_helper\inject.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\usvfs_helper\hookcontext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\usvfs_helper\redirectiontree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,8 +4,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared.vcxproj", "{2BB3300B-F08A-4063-95C4-8A0FADAE6C51}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E75F344A-1373-4E3F-97EA-BC80CA42E0F0} = {E75F344A-1373-4E3F-97EA-BC80CA42E0F0}
+		{CDADDEC0-B72B-43B4-831F-72BA85B72805} = {CDADDEC0-B72B-43B4-831F-72BA85B72805}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_test", "shared_test.vcxproj", "{26B28EFA-5EEB-45AC-AF8F-C20F478070F8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2BB3300B-F08A-4063-95C4-8A0FADAE6C51} = {2BB3300B-F08A-4063-95C4-8A0FADAE6C51}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testinject_bin", "testinject_bin.vcxproj", "{5705ABC8-8CF4-4A1C-AACF-22554B38E04A}"
 EndProject

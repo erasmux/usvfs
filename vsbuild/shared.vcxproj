@@ -111,6 +111,7 @@
     <ClCompile Include="..\src\shared\debug_monitor.cpp" />
     <ClCompile Include="..\src\shared\directory_tree.cpp" />
     <ClCompile Include="..\src\shared\exceptionex.cpp" />
+    <ClCompile Include="..\src\shared\loghelpers.cpp" />
     <ClCompile Include="..\src\shared\ntdll_declarations.cpp" />
     <ClCompile Include="..\src\shared\scopeguard.cpp" />
     <ClCompile Include="..\src\shared\shmlogger.cpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="..\src\shared\debug_monitor.h" />
     <ClInclude Include="..\src\shared\directory_tree.h" />
     <ClInclude Include="..\src\shared\exceptionex.h" />
+    <ClInclude Include="..\src\shared\loghelpers.h" />
     <ClInclude Include="..\src\shared\ntdll_declarations.h" />
     <ClInclude Include="..\src\shared\scopeguard.h" />
     <ClInclude Include="..\src\shared\shared_memory.h" />

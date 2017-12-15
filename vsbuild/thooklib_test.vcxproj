@@ -118,6 +118,17 @@
     <ClCompile Include="..\test\thooklib_test\main.cpp" />
     <ClCompile Include="..\test\thooklib_test\test_hooks.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="shared.vcxproj">
+      <Project>{2bb3300b-f08a-4063-95c4-8a0fadae6c51}</Project>
+    </ProjectReference>
+    <ProjectReference Include="thooklib.vcxproj">
+      <Project>{1ce90f86-126e-40ab-bd8b-08b25fd2e68e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="udis86.vcxproj">
+      <Project>{5b0e078a-d196-4ebb-bd6e-dcfb48b15e90}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

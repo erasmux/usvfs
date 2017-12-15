@@ -117,6 +117,17 @@
   <ItemGroup>
     <ClCompile Include="..\test\tinjectlib_test\main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="asmjit.vcxproj">
+      <Project>{5338b9d6-c2a9-4ded-b7e8-31292b96cbf2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="shared.vcxproj">
+      <Project>{2bb3300b-f08a-4063-95c4-8a0fadae6c51}</Project>
+    </ProjectReference>
+    <ProjectReference Include="tinjectlib.vcxproj">
+      <Project>{d18d0b1c-37b4-48a8-88c0-399de2815c05}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1,8 +1,6 @@
-edit
-stderr.log
-stdout.log
-vs_stderr.log
-vs_stdout.log
-CMakeLists.txt.user
-/build
-/vsbuild
+.vs
+/bin
+/lib
+/test/bin
+/vsbuild/Release
+/vsbuild/Debug

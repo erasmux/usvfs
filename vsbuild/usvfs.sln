@@ -47,8 +47,15 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_dll", "usvfs_dll.vcxproj", "{562B0058-4701-4284-8B40-D87648A3F64C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_proxy", "usvfs_proxy.vcxproj", "{50AC03C1-BB24-4033-90E6-ABE65BCC13DC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BA5B2CAC-8B75-4C6B-83C7-FFB963E872B6} = {BA5B2CAC-8B75-4C6B-83C7-FFB963E872B6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_helper", "usvfs_helper.vcxproj", "{BA5B2CAC-8B75-4C6B-83C7-FFB963E872B6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2BB3300B-F08A-4063-95C4-8A0FADAE6C51} = {2BB3300B-F08A-4063-95C4-8A0FADAE6C51}
+		{D18D0B1C-37B4-48A8-88C0-399DE2815C05} = {D18D0B1C-37B4-48A8-88C0-399DE2815C05}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_test", "usvfs_test.vcxproj", "{1DDD14EC-2274-4793-803E-B64D278AFD7A}"
 EndProject

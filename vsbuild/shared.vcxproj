@@ -63,16 +63,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared_common.props" />
-    <Import Project="shared_common.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared_common.props" />
-    <Import Project="shared_common.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="shared_common.props" />
     <Import Project="shared_common.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -122,6 +119,39 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\shared\addrtools.cpp" />
+    <ClCompile Include="..\src\shared\debug_monitor.cpp" />
+    <ClCompile Include="..\src\shared\directory_tree.cpp" />
+    <ClCompile Include="..\src\shared\exceptionex.cpp" />
+    <ClCompile Include="..\src\shared\ntdll_declarations.cpp" />
+    <ClCompile Include="..\src\shared\scopeguard.cpp" />
+    <ClCompile Include="..\src\shared\shmlogger.cpp" />
+    <ClCompile Include="..\src\shared\stringcast_win.cpp" />
+    <ClCompile Include="..\src\shared\stringutils.cpp" />
+    <ClCompile Include="..\src\shared\unicodestring.cpp" />
+    <ClCompile Include="..\src\shared\wildcard.cpp" />
+    <ClCompile Include="..\src\shared\winapi.cpp" />
+    <ClCompile Include="..\src\shared\windows_error.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\shared\addrtools.h" />
+    <ClInclude Include="..\src\shared\custom_casts.h" />
+    <ClInclude Include="..\src\shared\debug_monitor.h" />
+    <ClInclude Include="..\src\shared\directory_tree.h" />
+    <ClInclude Include="..\src\shared\exceptionex.h" />
+    <ClInclude Include="..\src\shared\ntdll_declarations.h" />
+    <ClInclude Include="..\src\shared\scopeguard.h" />
+    <ClInclude Include="..\src\shared\shared_memory.h" />
+    <ClInclude Include="..\src\shared\shmlogger.h" />
+    <ClInclude Include="..\src\shared\stringcast.h" />
+    <ClInclude Include="..\src\shared\stringcast_basic.h" />
+    <ClInclude Include="..\src\shared\stringcast_win.h" />
+    <ClInclude Include="..\src\shared\stringutils.h" />
+    <ClInclude Include="..\src\shared\unicodestring.h" />
+    <ClInclude Include="..\src\shared\wildcard.h" />
+    <ClInclude Include="..\src\shared\winapi.h" />
+    <ClInclude Include="..\src\shared\windows_error.h" />
+    <ClInclude Include="..\src\shared\windows_sane.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

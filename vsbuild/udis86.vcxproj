@@ -73,14 +73,38 @@
     <Import Project="common.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <CustomBuildAfterTargets>PrepareForBuild</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <CustomBuildAfterTargets>PrepareForBuild</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CustomBuildAfterTargets>PrepareForBuild</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CustomBuildAfterTargets>PrepareForBuild</CustomBuildAfterTargets>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <CustomBuildStep>
+      <Command>python  ..\udis86\scripts\ud_itab.py ..\udis86\docs\x86\optable.xml ..\udis86\libudis86</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Building udis86 optable</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\udis86\libudis86\itab.c;..\udis86\libudis86\itab.h</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\udis86\docs\x86\optable.xml;..\udis86\scripts\ud_itab.py;..\udis86\scripts\ud_opcode.py</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -88,7 +112,20 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <CustomBuildStep>
+      <Command>python  ..\udis86\scripts\ud_itab.py ..\udis86\docs\x86\optable.xml ..\udis86\libudis86</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Building udis86 optable</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\udis86\libudis86\itab.c;..\udis86\libudis86\itab.h</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\udis86\docs\x86\optable.xml;..\udis86\scripts\ud_itab.py;..\udis86\scripts\ud_opcode.py</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -98,11 +135,24 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>python  ..\udis86\scripts\ud_itab.py ..\udis86\docs\x86\optable.xml ..\udis86\libudis86</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Building udis86 optable</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\udis86\libudis86\itab.c;..\udis86\libudis86\itab.h</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\udis86\docs\x86\optable.xml;..\udis86\scripts\ud_itab.py;..\udis86\scripts\ud_opcode.py</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -112,13 +162,40 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>python  ..\udis86\scripts\ud_itab.py ..\udis86\docs\x86\optable.xml ..\udis86\libudis86</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Building udis86 optable</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\udis86\libudis86\itab.c;..\udis86\libudis86\itab.h</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\udis86\docs\x86\optable.xml;..\udis86\scripts\ud_itab.py;..\udis86\scripts\ud_opcode.py</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\udis86\libudis86\decode.c" />
+    <ClCompile Include="..\udis86\libudis86\itab.c" />
+    <ClCompile Include="..\udis86\libudis86\syn-att.c" />
+    <ClCompile Include="..\udis86\libudis86\syn-intel.c" />
+    <ClCompile Include="..\udis86\libudis86\syn.c" />
+    <ClCompile Include="..\udis86\libudis86\udis86.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\udis86\libudis86\decode.h" />
+    <ClInclude Include="..\udis86\libudis86\extern.h" />
+    <ClInclude Include="..\udis86\libudis86\itab.h" />
+    <ClInclude Include="..\udis86\libudis86\syn.h" />
+    <ClInclude Include="..\udis86\libudis86\types.h" />
+    <ClInclude Include="..\udis86\libudis86\udint.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

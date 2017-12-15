@@ -7,6 +7,9 @@
 /vsbuild/Release
 /vsbuild/Debug
 
+# test "side effects"
+/test/temp
+
 # VS generated files:
 .vs
 *.aps

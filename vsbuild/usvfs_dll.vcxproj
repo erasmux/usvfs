@@ -114,7 +114,6 @@
     <ClCompile Include="..\src\usvfs_dll\hooks\kernel32.cpp" />
     <ClCompile Include="..\src\usvfs_dll\hooks\ntdll.cpp" />
     <ClCompile Include="..\src\usvfs_dll\hooks\ole32.cpp" />
-    <ClCompile Include="..\src\usvfs_dll\semaphore.cpp" />
     <ClCompile Include="..\src\usvfs_dll\stringcast_boost.cpp" />
     <ClCompile Include="..\src\usvfs_dll\usvfs.cpp" />
   </ItemGroup>
@@ -129,7 +128,6 @@
     <ClInclude Include="..\src\usvfs_dll\hooks\ntdll.h" />
     <ClInclude Include="..\src\usvfs_dll\hooks\ole32.h" />
     <ClInclude Include="..\src\usvfs_dll\hooks\sharedids.h" />
-    <ClInclude Include="..\src\usvfs_dll\semaphore.h" />
     <ClInclude Include="..\src\usvfs_dll\stringcast_boost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

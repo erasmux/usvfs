@@ -111,12 +111,14 @@
     <ClCompile Include="..\src\usvfs_helper\hookcontext.cpp" />
     <ClCompile Include="..\src\usvfs_helper\inject.cpp" />
     <ClCompile Include="..\src\usvfs_helper\redirectiontree.cpp" />
+    <ClCompile Include="..\src\usvfs_helper\semaphore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\usvfs_helper\hookcallcontext.h" />
     <ClInclude Include="..\src\usvfs_helper\hookcontext.h" />
     <ClInclude Include="..\src\usvfs_helper\inject.h" />
     <ClInclude Include="..\src\usvfs_helper\redirectiontree.h" />
+    <ClInclude Include="..\src\usvfs_helper\semaphore.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

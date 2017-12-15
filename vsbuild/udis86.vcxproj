@@ -89,7 +89,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <CustomBuildStep>
@@ -109,7 +108,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <CustomBuildStep>
@@ -131,7 +129,6 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -157,7 +154,6 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Games\MO2\build\usvfs_clean\udis86\libudis86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

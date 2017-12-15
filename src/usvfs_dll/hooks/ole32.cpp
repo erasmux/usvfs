@@ -1,8 +1,8 @@
 #include "ole32.h"
 #include "cogetserverpid.h"
-#include "../loghelpers.h"
-#include "../hookcallcontext.h"
-#include "../hookcontext.h"
+#include <loghelpers.h>
+#include <hookcallcontext.h>
+#include <hookcontext.h>
 #include <inject.h>
 #include <winapi.h>
 #include <future>

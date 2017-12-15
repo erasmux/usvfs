@@ -11,6 +11,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(GTEST_PATH)\googletest\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>UNITTEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(GTEST_PATH)\build\googlemock\gtest</AdditionalLibraryDirectories>

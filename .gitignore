@@ -1,6 +1,12 @@
-.vs
+# build outputs:
 /bin
 /lib
 /test/bin
+
+# build intermediates:
 /vsbuild/Release
 /vsbuild/Debug
+
+# VS generated files:
+.vs
+*.aps

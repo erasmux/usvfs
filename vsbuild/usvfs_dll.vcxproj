@@ -107,34 +107,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\usvfs\version.rc" />
+    <ResourceCompile Include="..\src\usvfs_dll\version.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\usvfs\hookcallcontext.cpp" />
-    <ClCompile Include="..\src\usvfs\hookcontext.cpp" />
-    <ClCompile Include="..\src\usvfs\hookmanager.cpp" />
-    <ClCompile Include="..\src\usvfs\hooks\kernel32.cpp" />
-    <ClCompile Include="..\src\usvfs\hooks\ntdll.cpp" />
-    <ClCompile Include="..\src\usvfs\hooks\ole32.cpp" />
-    <ClCompile Include="..\src\usvfs\loghelpers.cpp" />
-    <ClCompile Include="..\src\usvfs\redirectiontree.cpp" />
-    <ClCompile Include="..\src\usvfs\semaphore.cpp" />
-    <ClCompile Include="..\src\usvfs\stringcast_boost.cpp" />
-    <ClCompile Include="..\src\usvfs\usvfs.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hookcallcontext.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hookcontext.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hookmanager.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hooks\kernel32.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hooks\ntdll.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\hooks\ole32.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\loghelpers.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\redirectiontree.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\semaphore.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\stringcast_boost.cpp" />
+    <ClCompile Include="..\src\usvfs_dll\usvfs.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\usvfs\hookcallcontext.h" />
-    <ClInclude Include="..\src\usvfs\hookcontext.h" />
-    <ClInclude Include="..\src\usvfs\hookmanager.h" />
-    <ClInclude Include="..\src\usvfs\hooks\cogetserverpid.h" />
-    <ClInclude Include="..\src\usvfs\hooks\kernel32.h" />
-    <ClInclude Include="..\src\usvfs\hooks\ntdll.h" />
-    <ClInclude Include="..\src\usvfs\hooks\ole32.h" />
-    <ClInclude Include="..\src\usvfs\hooks\sharedids.h" />
-    <ClInclude Include="..\src\usvfs\loghelpers.h" />
-    <ClInclude Include="..\src\usvfs\redirectiontree.h" />
-    <ClInclude Include="..\src\usvfs\semaphore.h" />
-    <ClInclude Include="..\src\usvfs\stringcast_boost.h" />
+    <ClInclude Include="..\src\usvfs_dll\hookcallcontext.h" />
+    <ClInclude Include="..\src\usvfs_dll\hookcontext.h" />
+    <ClInclude Include="..\src\usvfs_dll\hookmanager.h" />
+    <ClInclude Include="..\src\usvfs_dll\hooks\cogetserverpid.h" />
+    <ClInclude Include="..\src\usvfs_dll\hooks\kernel32.h" />
+    <ClInclude Include="..\src\usvfs_dll\hooks\ntdll.h" />
+    <ClInclude Include="..\src\usvfs_dll\hooks\ole32.h" />
+    <ClInclude Include="..\src\usvfs_dll\hooks\sharedids.h" />
+    <ClInclude Include="..\src\usvfs_dll\loghelpers.h" />
+    <ClInclude Include="..\src\usvfs_dll\redirectiontree.h" />
+    <ClInclude Include="..\src\usvfs_dll\semaphore.h" />
+    <ClInclude Include="..\src\usvfs_dll\stringcast_boost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

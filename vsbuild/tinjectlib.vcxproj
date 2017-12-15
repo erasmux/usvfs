@@ -119,6 +119,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\tinjectlib\asmjit_sane.h" />
+    <ClInclude Include="..\src\tinjectlib\injectlib.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\tinjectlib\injectlib.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

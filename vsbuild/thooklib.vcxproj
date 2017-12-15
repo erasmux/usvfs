@@ -119,6 +119,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\thooklib\asmjit_sane.h" />
+    <ClInclude Include="..\src\thooklib\hooklib.h" />
+    <ClInclude Include="..\src\thooklib\ttrampolinepool.h" />
+    <ClInclude Include="..\src\thooklib\udis86wrapper.h" />
+    <ClInclude Include="..\src\thooklib\utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\thooklib\hooklib.cpp" />
+    <ClCompile Include="..\src\thooklib\ttrampolinepool.cpp" />
+    <ClCompile Include="..\src\thooklib\udis86wrapper.cpp" />
+    <ClCompile Include="..\src\thooklib\utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

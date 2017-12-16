@@ -137,6 +137,9 @@
     <ProjectReference Include="tinjectlib.vcxproj">
       <Project>{d18d0b1c-37b4-48a8-88c0-399de2815c05}</Project>
     </ProjectReference>
+    <ProjectReference Include="usvfs_dll.vcxproj">
+      <Project>{562b0058-4701-4284-8b40-d87648a3f64c}</Project>
+    </ProjectReference>
     <ProjectReference Include="usvfs_helper.vcxproj">
       <Project>{ba5b2cac-8b75-4c6b-83c7-ffb963e872b6}</Project>
     </ProjectReference>

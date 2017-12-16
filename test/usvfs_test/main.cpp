@@ -339,7 +339,7 @@ TEST_F(USVFSTestAuto, CanCreateMultipleLinks)
 int main(int argc, char **argv) {
   boost::filesystem::path dllPath(winapi::wide::getModuleFileName(nullptr));
   dllPath = dllPath.parent_path().parent_path().parent_path() / "lib" /
-#ifdef BOOST_ARCH_X86_64
+#if BOOST_ARCH_X86_64
     "usvfs_x64.dll";
 #else
     "usvfs_x86.dll";

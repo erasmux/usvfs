@@ -45,6 +45,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinjectlib_test", "tinjectl
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_dll", "usvfs_dll.vcxproj", "{562B0058-4701-4284-8B40-D87648A3F64C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2BB3300B-F08A-4063-95C4-8A0FADAE6C51} = {2BB3300B-F08A-4063-95C4-8A0FADAE6C51}
+		{D18D0B1C-37B4-48A8-88C0-399DE2815C05} = {D18D0B1C-37B4-48A8-88C0-399DE2815C05}
+		{1CE90F86-126E-40AB-BD8B-08B25FD2E68E} = {1CE90F86-126E-40AB-BD8B-08B25FD2E68E}
+		{BA5B2CAC-8B75-4C6B-83C7-FFB963E872B6} = {BA5B2CAC-8B75-4C6B-83C7-FFB963E872B6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_proxy", "usvfs_proxy.vcxproj", "{50AC03C1-BB24-4033-90E6-ABE65BCC13DC}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -58,6 +64,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_helper", "usvfs_helpe
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usvfs_test", "usvfs_test.vcxproj", "{1DDD14EC-2274-4793-803E-B64D278AFD7A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{562B0058-4701-4284-8B40-D87648A3F64C} = {562B0058-4701-4284-8B40-D87648A3F64C}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{EDA9B67D-1E64-4CAB-8391-10712538C821}"
 EndProject

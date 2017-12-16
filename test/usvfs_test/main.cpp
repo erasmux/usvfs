@@ -36,8 +36,8 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #include <hookcontext.h>
 #include <unicodestring.h>
 #include <stringcast.h>
-#include "../../src/usvfs_dll/hooks/kernel32.h"
-#include "../../src/usvfs_dll/hooks/ntdll.h"
+#include <hooks/kernel32.h>
+#include <hooks/ntdll.h>
 #include <usvfs.h>
 #include <logging.h>
 

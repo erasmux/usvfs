@@ -8,13 +8,13 @@
 using namespace usvfs::shared;
 using namespace InjectLib;
 
-#ifdef BOOST_ARCH_X86_64
+#if BOOST_ARCH_X86_64
 static const wchar_t INJECT_BIN[] = L"testinject_bin_x64.exe";
 #else
 static const wchar_t INJECT_BIN[] = L"testinject_bin_x86.exe";
 #endif
 
-#ifdef BOOST_ARCH_X86_64
+#if BOOST_ARCH_X86_64
 static const wchar_t INJECT_LIB[] = L"testinject_dll_x64.dll";
 #else
 static const wchar_t INJECT_LIB[] = L"testinject_dll_x86.dll";

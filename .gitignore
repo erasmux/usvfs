@@ -13,3 +13,4 @@
 # VS generated files:
 .vs
 *.aps
+*.vcxproj.user

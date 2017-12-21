@@ -64,6 +64,46 @@ namespace fs = std::tr2::sys;
 #define PRIVATE private
 #endif // PRIVATE
 
+class debug_line {
+public:
+  ~debug_line() {
+    w << '\n';
+    OutputDebugStringA(w.c_str());
+  }
+
+  class ptr {
+  public:
+    explicit ptr(void* p) : m_p(p) {}
+    std::intptr_t integer_value() const { return reinterpret_cast<std::intptr_t>(m_p); }
+  private:
+    void* m_p;
+  };
+
+  debug_line& operator<<(bool v) { w << v; return *this; }
+  debug_line& operator<<(char v) { w << v; return *this; }
+  debug_line& operator<<(unsigned char v) { w << v; return *this; }
+  debug_line& operator<<(short v) { w << v; return *this; }
+  debug_line& operator<<(unsigned short v) { w << v; return *this; }
+  debug_line& operator<<(int v) { w << v; return *this; }
+  debug_line& operator<<(unsigned int v) { w << v; return *this; }
+  debug_line& operator<<(long v) { w << v; return *this; }
+  debug_line& operator<<(unsigned long v) { w << v; return *this; }
+  debug_line& operator<<(long long v) { w << v; return *this; }
+  debug_line& operator<<(unsigned long long v) { w << v; return *this; }
+  debug_line& operator<<(float v) { w << v; return *this; }
+  debug_line& operator<<(double v) { w << v; return *this; }
+  debug_line& operator<<(long double v) { w << v; return *this; }
+
+  debug_line& operator<<(const ptr& p) { w << "0x" << fmt::hex(p.integer_value()); return *this; }
+  debug_line& operator<<(const char* str) { w << str; return *this; }
+  debug_line& operator<<(const std::string& str) { w << str.c_str(); return *this; }
+  template <class Allocator>
+  debug_line& operator<<(const boost::container::basic_string<char, std::char_traits<char>, Allocator>& str) { w << str.c_str(); return *this; }
+
+private:
+  fmt::MemoryWriter w;
+};
+
 
 namespace usvfs {
 
@@ -185,6 +225,8 @@ public:
 
   typedef std::function<void (const NodePtrT&)> VisitorFunction;
 
+  friend debug_line& operator<<(debug_line& dl, const NodePtrT &nodeptr);
+
 public:
 
   DirectoryTree() = delete;
@@ -214,7 +256,11 @@ public:
   DirectoryTree(NodeT &&reference) = delete;
 
   ~DirectoryTree() {
-    m_Nodes.clear();
+    debug_line() << "AEBUG: ~DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size() << "nodes] start:";
+    while (!m_Nodes.empty())
+      erase(filesBegin());
+    //m_Nodes.clear();
+    debug_line() << "AEBUG: ~DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size() << "nodes] done.";
   }
 
   /**
@@ -436,12 +482,17 @@ public:
    * @brief erase the leaf at the specfied iterator
    * @return an iterator to the following file
    **/
-  file_iterator erase(file_iterator iter) { return m_Nodes.erase(iter); }
+  file_iterator erase(file_iterator iter) {
+    debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size() << "nodes] :: erase(" << iter->first << "):";
+    return m_Nodes.erase(iter);
+    debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size() << "nodes] :: erase done.";
+  }
 
   /**
    * @brief clear all nodes
    */
   void clear() {
+    debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size() << "nodes] :: clear()";
     m_Nodes.clear();
   }
 
@@ -456,6 +507,9 @@ public:
 PRIVATE:
 
   void set(const StringT &key, const NodePtrT &value) {
+    NodeT* dbgv = value.get().get();
+    debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(this) << " [" << m_Name << ", " << m_Nodes.size()
+      << "nodes] :: set(" << key << ", " << debug_line::ptr(dbgv) << ":" << (dbgv ? dbgv->name().c_str() : "<NULL>") << ")";
     auto res = m_Nodes.emplace(key, value);
     if (!res.second) {
       res.first->second = value;
@@ -560,7 +614,6 @@ PRIVATE:
   NodeMapT m_Nodes;
 
 };
-
 
 /**
  * smart pointer to DirectoryTrees (only intended for top-level nodes). This will
@@ -748,6 +801,11 @@ private:
   {
     SharedMemoryT::segment_manager *manager = allocator.get_segment_manager();
 
+    /*
+    debug_line() << "BEBUG: createSubNode(" << name << ")";
+    if (name == "DontAskAgainForLink.txt")
+      __asm int 3;
+    */
 
     return manager->construct<TreeT>(bi::anonymous_instance)(
         name
@@ -789,6 +847,9 @@ private:
         newNode->m_Flags = static_cast<usvfs::shared::TreeFlags>(flags);
         return newNode;
       } else {
+        typename TreeT::NodeT* dbgv = newNode.get().get();
+        debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(base) << " [" << base->m_Name << ", " << base->m_Nodes.size()
+          << "nodes] :: insert1(" << iterString << ", " << debug_line::ptr(dbgv) << ":" << (dbgv ? dbgv->name().c_str() : "<NULL>") << ")";
         auto res = base->m_Nodes.insert(std::make_pair(iterString, newNode));
         return res.second ? newNode : TreeT::NodePtrT();
       }
@@ -800,6 +861,9 @@ private:
                                                                       , iter->string()
                                                                       , FLAG_DIRECTORY | FLAG_DUMMY
                                                                       , createEmpty()));
+        typename TreeT::NodeT* dbgv = newNode.get().get();
+        debug_line() << "AEBUG: DirectoryTree @ " << debug_line::ptr(base) << " [" << base->m_Name << ", " << base->m_Nodes.size()
+          << "nodes] :: insert1(" << iterString << ", " << debug_line::ptr(dbgv) << ":" << (dbgv ? dbgv->name().c_str() : "<NULL>") << ")";
         subNode = base->m_Nodes.insert(std::make_pair(iterString, newNode)).first;
         subNode->second->m_Self = TreeT::WeakPtrT(subNode->second);
         subNode->second->m_Parent = base->m_Self;

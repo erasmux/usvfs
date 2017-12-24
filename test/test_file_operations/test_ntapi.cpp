@@ -1,0 +1,302 @@
+
+#include "test_ntapi.h"
+#include <test_helpers.h>
+#include <cstdio>
+#include <cstring>
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Winternl.h>
+#include "test_ntdll_declarations.h"
+#include <stdio.h>
+
+class TestNtApi::SafeHandle
+{
+public:
+  SafeHandle(HANDLE handle = NULL) : m_handle(handle) {}
+  SafeHandle(const SafeHandle&) = delete;
+  SafeHandle(SafeHandle&& other) : m_handle(other.m_handle) { other.m_handle = nullptr; }
+
+  operator HANDLE() { return m_handle; }
+  operator PHANDLE() { return &m_handle; }
+
+  bool valid() const { return m_handle != NULL; }
+
+  ~SafeHandle() {
+    if (m_handle) {
+      NTSTATUS status = NtClose(m_handle);
+      if (!NT_SUCCESS(status))
+        std::fprintf(stderr, "NtClose failed : 0x%lx", status);
+      m_handle = NULL;
+    }
+  }
+
+private:
+  HANDLE m_handle;
+};
+
+const char* TestNtApi::id()
+{
+  return "Nt";
+}
+
+TestNtApi::path TestNtApi::real_path(const char* abs_or_rel_path)
+{
+  if (!abs_or_rel_path || !abs_or_rel_path[0])
+    return path();
+
+  bool path_dos = strncmp(abs_or_rel_path, "\\DosDevices\\", strlen("\\DosDevices\\")) == 0;
+  bool path_has_drive = abs_or_rel_path[1] == ':';
+  bool path_unc = abs_or_rel_path[0] == '\\' && abs_or_rel_path[1] == '\\';
+  bool path_absolute = path_has_drive || abs_or_rel_path[0] == '\\';
+
+  path result;
+  if (!path_dos)
+  {
+    if (!path_unc)
+      result.assign(L"\\DosDevices");
+    if (!path_absolute)
+      result /= current_directory();
+    else if (!path_has_drive && !path_unc)
+      // if "absolute" path but without a drive letter (i.e. \windows)
+      // the take the drive from the current directory: (i.e. "C:")
+      result /= current_directory().root_name();
+  }
+
+  int result_size = 0;
+  for (auto r : result) ++result_size;
+
+  // now append abs_or_rel_path, handling ".." and "." properly:
+  path arp{ abs_or_rel_path };
+  int base_size = path_unc ? 3 : 4;
+  for (auto p : arp)
+  {
+    if (p == "..") {
+      if (result_size > base_size) { // refuse to remove top level element (i.e. \DosDevices\C:\ which is 4 elements)
+        result.remove_filename();
+        --result_size;
+      }
+    }
+    else if (!p.empty() && p != ".") {
+      result /= p;
+      ++result_size;
+    }
+  }
+
+  return result;
+}
+
+TestNtApi::SafeHandle TestNtApi::open_directory(const path& directory_path, bool create, bool allow_non_existence, long* pstatus)
+{
+  print_operation(create ? "Creating directory" : "Openning directory", directory_path);
+
+  UNICODE_STRING unicode_path;
+  RtlInitUnicodeString(&unicode_path, directory_path.c_str());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+  SafeHandle dir;
+  IO_STATUS_BLOCK iosb;
+  NTSTATUS status =
+    NtCreateFile(dir,
+      FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
+      &attributes, &iosb, NULL, FILE_ATTRIBUTE_DIRECTORY,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      create ? FILE_OPEN_IF : FILE_OPEN,
+      FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+      NULL, 0);
+  if (pstatus)
+    *pstatus = status;
+  if ((status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND) && allow_non_existence)
+    return NULL;
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtCreateFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtCreateFile status", iosb.Status);
+
+  return dir;
+}
+
+TestFileSystem::FileInfoList TestNtApi::list_directory(const path& directory_path)
+{
+  SafeHandle dir = open_directory(directory_path, false);
+
+  print_operation("Querying directory", directory_path);
+
+  FileInfoList files;
+  while (true)
+  {
+    char buf[4096]{ 0 };
+    IO_STATUS_BLOCK iosb;
+
+    NTSTATUS status =
+      NtQueryDirectoryFile(dir, NULL, NULL, NULL,
+        &iosb, buf, sizeof(buf), MyFileBothDirectoryInformation, FALSE, NULL, FALSE);
+    if (status == STATUS_NO_MORE_FILES)
+      break;
+    if (!NT_SUCCESS(status))
+      throw test::FuncFailed("NtQueryDirectoryFile", status);
+    if (!NT_SUCCESS(iosb.Status))
+      throw test::FuncFailed("NtQueryDirectoryFile status", iosb.Status);
+    if (iosb.Information == 0) // This shouldn't happend unless the filename (not full path) is larger then sizeof(buf)
+      throw test::FuncFailed("NtQueryDirectoryFile buffer too small", iosb.Information);
+
+    PFILE_BOTH_DIR_INFORMATION info = reinterpret_cast<PFILE_BOTH_DIR_INFORMATION>(buf);
+    while (true)
+    {
+      files.push_back(FileInformation(
+        std::wstring(info->FileName, info->FileNameLength / sizeof(info->FileName[0])),
+        info->FileAttributes, info->EndOfFile.QuadPart));
+      if (info->NextEntryOffset)
+        info = reinterpret_cast<PFILE_BOTH_DIR_INFORMATION>(reinterpret_cast<char*>(info) + info->NextEntryOffset);
+      else
+        break;
+    }
+  }
+
+  return files;
+}
+
+static inline bool is_root_path_element(const std::wstring& el)
+{
+  return el == L"\\" || el == L"DosDevices" || (el.length() == 2 && el[1] == L':');
+}
+
+void TestNtApi::create_path(const path& directory_path)
+{
+  // sanity and guaranteed recursion end:
+  if (!directory_path.has_relative_path())
+    throw std::runtime_error("Refusing to create non-existing top level path");
+
+  // if directory already exists all is good
+  NTSTATUS status;
+  if (open_directory(directory_path, false, true, &status).valid())
+    return;
+
+  if (status != STATUS_OBJECT_NAME_NOT_FOUND) // STATUS_OBJECT_NAME_NOT_FOUND means parent directory already exists
+    create_path(directory_path.parent_path()); // otherwise create parent directory (recursively)
+
+  open_directory(directory_path, true);
+}
+
+void TestNtApi::read_file(const path& file_path)
+{
+  print_operation("Reading file", file_path);
+
+  UNICODE_STRING unicode_path;
+  RtlInitUnicodeString(&unicode_path, file_path.c_str());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+  SafeHandle file;
+  IO_STATUS_BLOCK iosb;
+  NTSTATUS status =
+    NtOpenFile(file, GENERIC_READ|SYNCHRONIZE, &attributes, &iosb, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtOpenFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtOpenFile status", iosb.Status);
+
+  uint32_t total = 0;
+  bool ends_with_newline = false;
+  bool pending_prefix = true;
+  while (true) {
+    char buf[4096];
+
+    memset(&iosb, 0, sizeof(iosb));
+    status = NtReadFile(file, NULL, NULL, NULL, &iosb, buf, sizeof(buf), NULL, NULL);
+    if (status == STATUS_END_OF_FILE)
+      break;
+    if (!NT_SUCCESS(status))
+      throw test::FuncFailed("NtReadFile", status);
+
+    total += iosb.Information;
+    char* begin = buf;
+    char* end = begin + iosb.Information;
+    while (begin != end) {
+      if (pending_prefix) {
+        if (output())
+          fwrite(FILE_CONTENTS_PRINT_PREFIX, 1, strlen(FILE_CONTENTS_PRINT_PREFIX), output());
+        pending_prefix = false;
+      }
+      char* print_end = reinterpret_cast<char*>(std::memchr(begin, '\n', end - begin));
+      if (print_end) {
+        pending_prefix = true;
+        ++print_end; // also print the '\n'
+      }
+      else
+        print_end = end;
+      if (output())
+        fwrite(begin, 1, print_end - begin, output());
+      ends_with_newline = *(print_end - 1) == '\n';
+      begin = print_end;
+    }
+  }
+  if (output())
+  {
+    if (!ends_with_newline)
+      fwrite("\n", 1, 1, output());
+    fprintf(output(), "# Successfully read %u bytes.\n", total);
+  }
+}
+
+void TestNtApi::write_file(const path& file_path, const void* data, std::size_t size, bool overwrite)
+{
+  print_operation(overwrite ? "Overwritting file" : "Rewriting file", file_path);
+
+  UNICODE_STRING unicode_path;
+  RtlInitUnicodeString(&unicode_path, file_path.c_str());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+  ACCESS_MASK access = GENERIC_WRITE | SYNCHRONIZE;
+  if (overwrite) // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
+    access |= GENERIC_READ;
+  ULONG disposition = overwrite ? FILE_SUPERSEDE : FILE_OPEN; // FILE_SUPERSEDE for the overwrite case should be relatively easy for usvfs to handle
+                                                              // as it leave no doubt we are replacing the old file (if such exists)
+
+  SafeHandle file;
+  IO_STATUS_BLOCK iosb;
+  NTSTATUS status =
+    NtCreateFile(
+      file, access, &attributes, &iosb, NULL, FILE_ATTRIBUTE_NORMAL, 0,
+      disposition, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtCreateFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtCreateFile status", iosb.Status);
+
+  if (!overwrite)
+  {
+    // in case we didn't overwrite the file, we need to truncate it:
+    FILE_END_OF_FILE_INFORMATION eofinfo{ 0 };
+    status =
+      NtSetInformationFile(file, &iosb, &eofinfo, sizeof(eofinfo), MyFileEndOfFileInformation);
+
+    if (!NT_SUCCESS(status))
+      throw test::FuncFailed("NtSetInformationFile", status);
+    if (!NT_SUCCESS(iosb.Status))
+      throw test::FuncFailed("NtSetInformationFile status", iosb.Status);
+  }
+
+  // finally write the data:
+  status =
+    NtWriteFile(file, NULL, NULL, NULL, &iosb, const_cast<void*>(data), static_cast<ULONG>(size), NULL, NULL);
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtWriteFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtWriteFile status", iosb.Status);
+
+  if (output())
+  {
+    fprintf(output(), "# Successfully written %u bytes {", static_cast<unsigned>(iosb.Information));
+    fwrite(data, 1, size, output());
+    fprintf(output(), "}\n");
+  }
+}

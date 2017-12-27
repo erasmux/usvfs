@@ -20,21 +20,12 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <test_helpers.h>
-
-#pragma warning (push, 3)
 #include <iostream>
 #include <gtest/gtest.h>
-
-#include <fstream>
-#pragma warning (pop)
-
-
 #include <inject.h>
 #include <windows_sane.h>
 #include <stringutils.h>
-
 #include <spdlog.h>
-
 #include <hookcontext.h>
 #include <unicodestring.h>
 #include <stringcast.h>
@@ -42,85 +33,15 @@ along with usvfs. If not, see <http://www.gnu.org/licenses/>.
 #include <hooks/ntdll.h>
 #include <usvfs.h>
 #include <logging.h>
+#include <filesystem>
 
-
+using std::experimental::filesystem::path;
 
 namespace spd = spdlog;
-
 namespace uhooks = usvfs::hooks;
 namespace ush = usvfs::shared;
 
-
-// name of a file to be created in the virtual fs. Shouldn't exist on disc but the directory must exist
-static LPCSTR  VIRTUAL_FILEA = "C:/np.exe";
-static LPCWSTR VIRTUAL_FILEW = L"C:/np.exe";
-
-// a real file on disc that has to exist
-static LPCSTR  REAL_FILEA = "C:/windows/notepad.exe";
-static LPCWSTR REAL_FILEW = L"C:/windows/notepad.exe";
-
-static LPCSTR  REAL_DIRA = "C:/windows/Logs";
-static LPCWSTR REAL_DIRW = L"C:/windows/Logs";
-
-
-static std::shared_ptr<spdlog::logger> logger()
-{
-  std::shared_ptr<spdlog::logger> result = spdlog::get("test");
-  if (result.get() == nullptr) {
-    result = spdlog::stdout_logger_mt("test");
-  }
-  return result;
-}
-
-class USVFSTest : public testing::Test
-{
-public:
-  void SetUp() {
-    SHMLogger::create("usvfs");
-    // need to initialize logging in the context of the dll
-    InitLogging();
-  }
-
-  void TearDown() {
-    std::array<char, 1024> buffer;
-    while (SHMLogger::instance().tryGet(buffer.data(), buffer.size())) {
-      std::cout << buffer.data() << std::endl;
-    }
-    SHMLogger::free();
-  }
-
-private:
-};
-
-class USVFSTestWithReroute : public testing::Test
-{
-public:
-  void SetUp() {
-    SHMLogger::create("usvfs");
-    // need to initialize logging in the context of the dll
-    InitLogging();
-
-    USVFSParameters params;
-    USVFSInitParameters(&params, "usvfs_test", true, LogLevel::Debug, CrashDumpsType::None, "");
-    m_Context.reset(CreateHookContext(params, ::GetModuleHandle(nullptr)));
-    usvfs::RedirectionTreeContainer &tree = m_Context->redirectionTable();
-    tree.addFile(ush::string_cast<std::string>(VIRTUAL_FILEW, ush::CodePage::UTF8).c_str()
-                 , usvfs::RedirectionDataLocal(REAL_FILEA));
-  }
-
-  void TearDown() {
-    std::array<char, 1024> buffer;
-    while (SHMLogger::instance().tryGet(buffer.data(), buffer.size())) {
-      std::cout << buffer.data() << std::endl;
-    }
-    m_Context.reset();
-    SHMLogger::free();
-  }
-private:
-  std::unique_ptr<usvfs::HookContext> m_Context;
-};
-
-class USVFSTestAuto : public testing::Test
+class USVFSFullTest : public testing::Test
 {
 public:
   void SetUp() {

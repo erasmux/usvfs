@@ -22,6 +22,13 @@ namespace test {
     return msg.str();
   }
 
+  std::string FuncFailed::msg(const char* func, const char* arg1)
+  {
+    fmt::MemoryWriter msg;
+    msg << func << "() failed : " << arg1;
+    return msg.str();
+  }
+
   std::string FuncFailed::msg(const char* func, const char* arg1, unsigned long res)
   {
     fmt::MemoryWriter msg;
@@ -43,6 +50,13 @@ namespace test {
     return msg.str();
   }
 
+  std::string WinFuncFailed::msg(const char* func, const char* arg1)
+  {
+    fmt::MemoryWriter msg;
+    msg << func << "() failed : " << arg1 << ", lastError=" << GetLastError();
+    return msg.str();
+  }
+
   std::string WinFuncFailed::msg(const char* func, const char* arg1, unsigned long res)
   {
     fmt::MemoryWriter msg;
@@ -50,16 +64,16 @@ namespace test {
     return msg.str();
   }
 
-  path path_of_test_bin(path relative_) {
+  path path_of_test_bin(const path& relative_) {
     path base(winapi::wide::getModuleFileName(nullptr));
     return base.parent_path() / relative_;
   }
 
-  path path_of_test_temp(path relative_) {
+  path path_of_test_temp(const path& relative_) {
     return path_of_test_bin().parent_path() / "temp" / relative_;
   }
 
-  path path_of_usvfs_lib(path relative_) {
+  path path_of_usvfs_lib(const path& relative_) {
     return path_of_test_bin().parent_path().parent_path() / "lib" / relative_;
   }
 
@@ -78,6 +92,35 @@ namespace test {
     res += ".";
     res += ext_;
     return res;
+  }
+
+  void clean_directory_tree(const path& dpath)
+  {
+    bool is_dir = false;
+    if (!winapi::ex::wide::fileExists(dpath.c_str(), &is_dir))
+      return;
+    if (!is_dir) {
+      if (!DeleteFile(dpath.c_str()))
+        throw WinFuncFailed("DeleteFile", dpath.u8string().c_str());
+    }
+    else {
+      // dpath exists and its a directory:
+      std::vector<std::wstring> recurse;
+      for (auto f : winapi::ex::wide::quickFindFiles(dpath.c_str(), "*"))
+      {
+        if (f.fileName == L"." || f.fileName == L"..")
+          continue;
+        if (f.attributes & FILE_ATTRIBUTE_DIRECTORY)
+          recurse.push_back(f.fileName);
+        else
+          if (!DeleteFile((dpath / f.fileName).c_str()))
+            throw WinFuncFailed("DeleteFile", dpath.u8string().c_str());
+      }
+      for (auto r : recurse)
+        clean_directory_tree(dpath / r);
+    }
+    if (winapi::ex::wide::fileExists(dpath.c_str()))
+      throw FuncFailed("clean_directory_tree", dpath.u8string().c_str());
   }
 
 };

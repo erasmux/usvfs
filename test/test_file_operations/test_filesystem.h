@@ -8,7 +8,7 @@
 class TestFileSystem
 {
 public:
-  static constexpr char* FILE_CONTENTS_PRINT_PREFIX = "== ";
+  static constexpr auto FILE_CONTENTS_PRINT_PREFIX = "== ";
 
   typedef std::experimental::filesystem::path path;
   typedef std::FILE FILE;

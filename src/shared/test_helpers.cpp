@@ -106,7 +106,7 @@ namespace test {
     else {
       // dpath exists and its a directory:
       std::vector<std::wstring> recurse;
-      for (auto f : winapi::ex::wide::quickFindFiles(dpath.c_str(), "*"))
+      for (auto f : winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*"))
       {
         if (f.fileName == L"." || f.fileName == L"..")
           continue;

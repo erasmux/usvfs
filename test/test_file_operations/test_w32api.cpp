@@ -100,21 +100,24 @@ void TestW32Api::create_path(const path& directory_path)
 
   print_operation("Checking directory", directory_path);
 
-  // if directory already exists all is good
   DWORD attr = GetFileAttributesW(directory_path.c_str());
-  if (attr == INVALID_FILE_ATTRIBUTES) // TODO: ignore directory not found error
+  if (attr != INVALID_FILE_ATTRIBUTES) {
+    if (attr & FILE_ATTRIBUTE_DIRECTORY)
+      return; // if directory already exists all is good
+    else
+      throw std::runtime_error("path exists but not a directory");
+  }
+  DWORD err = GetLastError();
+  if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
     throw test::WinFuncFailed("GetFileAttributesW");
-  if (attr & FILE_ATTRIBUTE_DIRECTORY == 0)
-    throw std::runtime_error("path exists but not a directory");
 
-  print_operation("TODO: Creating directory", directory_path);
+  print_operation("Creating directory", directory_path);
 
-  /*
-  if (status != STATUS_OBJECT_NAME_NOT_FOUND) // STATUS_OBJECT_NAME_NOT_FOUND means parent directory already exists
+  if (err != ERROR_FILE_NOT_FOUND) // ERROR_FILE_NOT_FOUND means parent directory already exists
     create_path(directory_path.parent_path()); // otherwise create parent directory (recursively)
 
-  open_directory(directory_path, true);
-  */
+  if (!CreateDirectoryW(directory_path.c_str(), NULL))
+    throw test::WinFuncFailed("CreateDirectoryW");
 }
 
 void TestW32Api::read_file(const path& file_path)

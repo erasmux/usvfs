@@ -60,16 +60,19 @@ public:
 
   // Options:
 
-  void set_output(const char* output_file)
+  void set_output(const char* output_file, const char* process_name)
   {
-    if (m_output && m_output != stdout)
+    if (m_output && m_output != stdout) {
+      fprintf(m_output, "Output log closed.\n", output_file);
       fclose(m_output);
+    }
 
     m_output = nullptr;
     errno_t err = fopen_s(&m_output, output_file, "wb");
     if (err || !m_output)
       throw test::WinFuncFailed("fopen_s", output_file, err);
     else {
+      fprintf(m_output, "Output log openned for %s pid %d\n", process_name, GetCurrentProcessId());
       w32api.set_output(m_output);
       ntapi.set_output(m_output);
     }
@@ -189,13 +192,15 @@ int main(int argc, char *argv[])
   bool found_commands = false;
   CommandExecuter executer;
 
+  fprintf(stdout, "%s starting in process %d\n", argv[0], GetCurrentProcessId());
+
   for (int ai = 1; ai < argc; ++ai)
   {
     try
     {
       // options:
       if (strcmp(argv[ai], "-out") == 0 && verify_args_exist("-out", 1, ai, argc)) {
-        executer.set_output(argv[++ai]);
+        executer.set_output(argv[++ai], argv[0]);
       }
       else if (strcmp(argv[ai], "-r") == 0)
         executer.recursive(true);
@@ -265,6 +270,10 @@ int main(int argc, char *argv[])
     print_usage(argv[0]);
     return 2;
   }
+
+  if (executer.file_output())
+    fprintf(executer.output(), "%s ended properly in process %d.\n", argv[0], GetCurrentProcessId());
+  fprintf(stdout, "%s ended properly in process %d.\n", argv[0], GetCurrentProcessId());
 
   return 0;
 }

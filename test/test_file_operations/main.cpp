@@ -117,7 +117,7 @@ public:
     }
     catch (const std::exception& e) {
       fmt::MemoryWriter msg;
-      msg << "Failed to create_path [" << real.parent_path().u8string() << "] : " << e.what();
+      msg << "Failed to create_path [" << m_api->relative_path(real.parent_path()).u8string() << "] : " << e.what();
       throw std::runtime_error(msg.str());
     }
     m_api->write_file(real, value, strlen(value), true);
@@ -192,15 +192,19 @@ int main(int argc, char *argv[])
   bool found_commands = false;
   CommandExecuter executer;
 
-  fprintf(stdout, "%s starting in process %d\n", argv[0], GetCurrentProcessId());
+  TestFileSystem::path exe_path = argv[0];
+  std::string exe_name = exe_path.filename().u8string();
+  fprintf(stdout, "%s starting in process %d\n", exe_name.c_str(), GetCurrentProcessId());
 
   for (int ai = 1; ai < argc; ++ai)
   {
     try
     {
+      SetLastError(0);
+
       // options:
       if (strcmp(argv[ai], "-out") == 0 && verify_args_exist("-out", 1, ai, argc)) {
-        executer.set_output(argv[++ai], argv[0]);
+        executer.set_output(argv[++ai], exe_name.c_str());
       }
       else if (strcmp(argv[ai], "-r") == 0)
         executer.recursive(true);
@@ -267,13 +271,13 @@ int main(int argc, char *argv[])
   }
 
   if (!found_commands) {
-    print_usage(argv[0]);
+    print_usage(exe_name.c_str());
     return 2;
   }
 
   if (executer.file_output())
-    fprintf(executer.output(), "%s ended properly in process %d.\n", argv[0], GetCurrentProcessId());
-  fprintf(stdout, "%s ended properly in process %d.\n", argv[0], GetCurrentProcessId());
+    fprintf(executer.output(), "%s ended properly in process %d.\n", exe_name.c_str(), GetCurrentProcessId());
+  fprintf(stdout, "%s ended properly in process %d.\n", exe_name.c_str(), GetCurrentProcessId());
 
   return 0;
 }

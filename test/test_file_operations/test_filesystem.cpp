@@ -58,3 +58,31 @@ void TestFileSystem::print_operation(const char* operation, path target)
   if (m_output)
     fprintf(m_output, "# (%s) %s {%s}\n", id(), operation, relative_path(target).u8string().c_str());
 }
+
+static inline void print_op_with_result(FILE* output, const char* prefix, const char* operation, uint32_t result, DWORD* last_error, const char* opt_arg)
+{
+  if (output) {
+    fprintf(output, "%s%s", prefix, operation);
+    if (opt_arg)
+      fprintf(output, " %s", opt_arg);
+    fprintf(output, " returned %u (0x%x)", result, result);
+    if (last_error)
+      fprintf(output, " last error %u (0x%x)", *last_error, *last_error);
+    fprintf(output, "\n");
+  }
+}
+
+void TestFileSystem::print_result(const char* operation, uint32_t result, bool with_last_error, const char* opt_arg)
+{
+  DWORD last_error = with_last_error ? GetLastError() : 0;
+  std::string prefix = "# ("; prefix += id(); prefix += ")   ";
+  print_op_with_result(m_output, prefix.c_str(), operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+}
+
+void TestFileSystem::print_error(const char* operation, uint32_t result, bool with_last_error, const char* opt_arg)
+{
+  DWORD last_error = with_last_error ? GetLastError() : 0;
+  print_op_with_result(stderr, "ERROR: ", operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+  if (m_output && m_output != stdout)
+    print_op_with_result(m_output, "ERROR: ", operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+}

@@ -13,9 +13,9 @@
 class TestNtApi::SafeHandle
 {
 public:
-  SafeHandle(HANDLE handle = NULL) : m_handle(handle) {}
+  SafeHandle(TestFileSystem* tfs, HANDLE handle = NULL) : m_handle(handle), m_tfs(tfs) {}
   SafeHandle(const SafeHandle&) = delete;
-  SafeHandle(SafeHandle&& other) : m_handle(other.m_handle) { other.m_handle = nullptr; }
+  SafeHandle(SafeHandle&& other) : m_handle(other.m_handle), m_tfs(other.m_tfs) { other.m_handle = nullptr; }
 
   operator HANDLE() { return m_handle; }
   operator PHANDLE() { return &m_handle; }
@@ -25,14 +25,20 @@ public:
   ~SafeHandle() {
     if (m_handle) {
       NTSTATUS status = NtClose(m_handle);
+      if (m_tfs)
+        m_tfs->print_result("NtClose", status);
       if (!NT_SUCCESS(status))
-        std::fprintf(stderr, "NtClose failed : 0x%lx", status);
+        if (m_tfs)
+          m_tfs->print_error("NtClose", status);
+        else
+          std::fprintf(stderr, "NtClose failed : 0x%lx", status);
       m_handle = NULL;
     }
   }
 
 private:
   HANDLE m_handle;
+  TestFileSystem* m_tfs;
 };
 
 const char* TestNtApi::id()
@@ -45,7 +51,10 @@ TestNtApi::path TestNtApi::real_path(const char* abs_or_rel_path)
   if (!abs_or_rel_path || !abs_or_rel_path[0])
     return path();
 
-  bool path_dos = strncmp(abs_or_rel_path, "\\DosDevices\\", strlen("\\DosDevices\\")) == 0;
+  static constexpr char nt_path_prefix[] = "\\??\\";
+  static constexpr wchar_t nt_path_prefix_w[] = L"\\??\\";
+
+  bool path_dos = strncmp(abs_or_rel_path, nt_path_prefix, strlen(nt_path_prefix)) == 0;
   bool path_has_drive = abs_or_rel_path[1] == ':';
   bool path_unc = abs_or_rel_path[0] == '\\' && abs_or_rel_path[1] == '\\';
   bool path_absolute = path_has_drive || abs_or_rel_path[0] == '\\';
@@ -54,7 +63,7 @@ TestNtApi::path TestNtApi::real_path(const char* abs_or_rel_path)
   if (!path_dos)
   {
     if (!path_unc)
-      result.assign(L"\\DosDevices");
+      result.assign(nt_path_prefix_w);
     if (!path_absolute)
       result /= current_directory();
     else if (!path_has_drive && !path_unc)
@@ -72,7 +81,7 @@ TestNtApi::path TestNtApi::real_path(const char* abs_or_rel_path)
   for (auto p : arp)
   {
     if (p == "..") {
-      if (result_size > base_size) { // refuse to remove top level element (i.e. \DosDevices\C:\ which is 4 elements)
+      if (result_size > base_size) { // refuse to remove top level element (i.e. \??\C:\ which is 4 elements)
         result.remove_filename();
         --result_size;
       }
@@ -96,7 +105,7 @@ TestNtApi::SafeHandle TestNtApi::open_directory(const path& directory_path, bool
   OBJECT_ATTRIBUTES attributes;
   InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-  SafeHandle dir;
+  SafeHandle dir(this);
   IO_STATUS_BLOCK iosb;
   NTSTATUS status =
     NtCreateFile(dir,
@@ -106,6 +115,9 @@ TestNtApi::SafeHandle TestNtApi::open_directory(const path& directory_path, bool
       create ? FILE_OPEN_IF : FILE_OPEN,
       FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
       NULL, 0);
+
+  print_result("NtCreateFile", status);
+
   if (pstatus)
     *pstatus = status;
   if ((status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND) && allow_non_existence)
@@ -133,6 +145,8 @@ TestFileSystem::FileInfoList TestNtApi::list_directory(const path& directory_pat
     NTSTATUS status =
       NtQueryDirectoryFile(dir, NULL, NULL, NULL,
         &iosb, buf, sizeof(buf), MyFileBothDirectoryInformation, FALSE, NULL, FALSE);
+    print_result("NtQueryDirectoryFile", status);
+
     if (status == STATUS_NO_MORE_FILES)
       break;
     if (!NT_SUCCESS(status))
@@ -156,11 +170,6 @@ TestFileSystem::FileInfoList TestNtApi::list_directory(const path& directory_pat
   }
 
   return files;
-}
-
-static inline bool is_root_path_element(const std::wstring& el)
-{
-  return el == L"\\" || el == L"DosDevices" || (el.length() == 2 && el[1] == L':');
 }
 
 void TestNtApi::create_path(const path& directory_path)
@@ -190,10 +199,11 @@ void TestNtApi::read_file(const path& file_path)
   OBJECT_ATTRIBUTES attributes;
   InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-  SafeHandle file;
+  SafeHandle file(this);
   IO_STATUS_BLOCK iosb;
   NTSTATUS status =
     NtOpenFile(file, GENERIC_READ|SYNCHRONIZE, &attributes, &iosb, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
+  print_result("NtOpenFile", status);
 
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtOpenFile", status);
@@ -208,6 +218,7 @@ void TestNtApi::read_file(const path& file_path)
 
     memset(&iosb, 0, sizeof(iosb));
     status = NtReadFile(file, NULL, NULL, NULL, &iosb, buf, sizeof(buf), NULL, NULL);
+    print_result("NtReadFile", status);
     if (status == STATUS_END_OF_FILE)
       break;
     if (!NT_SUCCESS(status))
@@ -259,12 +270,13 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   ULONG disposition = overwrite ? FILE_SUPERSEDE : FILE_OPEN; // FILE_SUPERSEDE for the overwrite case should be relatively easy for usvfs to handle
                                                               // as it leave no doubt we are replacing the old file (if such exists)
 
-  SafeHandle file;
+  SafeHandle file(this);
   IO_STATUS_BLOCK iosb;
   NTSTATUS status =
     NtCreateFile(
       file, access, &attributes, &iosb, NULL, FILE_ATTRIBUTE_NORMAL, 0,
       disposition, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+  print_result("NtCreateFile", status);
 
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtCreateFile", status);
@@ -277,6 +289,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
     FILE_END_OF_FILE_INFORMATION eofinfo{ 0 };
     status =
       NtSetInformationFile(file, &iosb, &eofinfo, sizeof(eofinfo), MyFileEndOfFileInformation);
+    print_result("NtSetInformationFile", status);
 
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtSetInformationFile", status);
@@ -287,6 +300,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   // finally write the data:
   status =
     NtWriteFile(file, NULL, NULL, NULL, &iosb, const_cast<void*>(data), static_cast<ULONG>(size), NULL, NULL);
+  print_result("NtWriteFile", status);
 
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtWriteFile", status);

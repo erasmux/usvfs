@@ -19,7 +19,7 @@ public:
 
   void set_output(FILE* output) { m_output = output; }
 
-  // base path used to trim outputs (which important so we can compare tests ran at different base paths)
+  // base path used to trim outputs (which is important so we can compare tests ran at different base paths)
   void set_basepath(const char* path) { m_basepath = real_path(path); }
 
   // returns the path relative to the base path
@@ -52,8 +52,12 @@ public:
   virtual void write_file(const path& file_path, const void* data, std::size_t size, bool overwrite) = 0;
 
 protected:
-  void print_operation(const char* operation, path target);
   FILE* output() { return m_output; }
+
+public: // mainly for derived class (but also used by helper classes like SafeHandle so public)
+  void print_operation(const char* operation, path target);
+  void print_result(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
+  void print_error(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
 
 private:
   FILE* m_output;

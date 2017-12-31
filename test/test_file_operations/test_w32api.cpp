@@ -10,49 +10,65 @@
 class TestW32Api::SafeHandle
 {
 public:
-  SafeHandle(HANDLE handle = INVALID_HANDLE_VALUE) : m_handle(handle) {}
+  SafeHandle(TestFileSystem* tfs, HANDLE handle = NULL) : m_handle(handle), m_tfs(tfs) {}
   SafeHandle(const SafeHandle&) = delete;
-  SafeHandle(SafeHandle&& other) : m_handle(other.m_handle) { other.m_handle = INVALID_HANDLE_VALUE; }
+  SafeHandle(SafeHandle&& other) : m_handle(other.m_handle), m_tfs(other.m_tfs) { other.m_handle = nullptr; }
 
   operator HANDLE() { return m_handle; }
   operator PHANDLE() { return &m_handle; }
+  uint32_t result_for_print() { return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(m_handle)); }
 
   bool valid() const { return m_handle != INVALID_HANDLE_VALUE; }
 
   ~SafeHandle() {
     if (m_handle) {
-      if (!CloseHandle(m_handle))
-        std::fprintf(stderr, "CloseHandle failed : %d", GetLastError());
+      BOOL res = CloseHandle(m_handle);
+      if (m_tfs)
+        m_tfs->print_result("CloseHandle", res, true);
+      if (!res)
+        if (m_tfs)
+          m_tfs->print_error("CloseHandle", res, true);
+        else
+          std::fprintf(stderr, "CloseHandle failed : %d", GetLastError());
       m_handle = NULL;
     }
   }
 
 private:
   HANDLE m_handle;
+  TestFileSystem* m_tfs;
 };
 
 class TestW32Api::SafeFindHandle
 {
 public:
-  SafeFindHandle(HANDLE handle = INVALID_HANDLE_VALUE) : m_handle(handle) {}
+  SafeFindHandle(TestFileSystem* tfs, HANDLE handle = NULL) : m_handle(handle), m_tfs(tfs) {}
   SafeFindHandle(const SafeFindHandle&) = delete;
-  SafeFindHandle(SafeFindHandle&& other) : m_handle(other.m_handle) { other.m_handle = INVALID_HANDLE_VALUE; }
+  SafeFindHandle(SafeFindHandle&& other) : m_handle(other.m_handle), m_tfs(other.m_tfs) { other.m_handle = nullptr; }
 
   operator HANDLE() { return m_handle; }
   operator PHANDLE() { return &m_handle; }
+  uint32_t result_for_print() { return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(m_handle)); }
 
   bool valid() const { return m_handle != INVALID_HANDLE_VALUE; }
 
   ~SafeFindHandle() {
     if (m_handle) {
-      if (!FindClose(m_handle))
-        std::fprintf(stderr, "FindClose failed : %d", GetLastError());
+      BOOL res = FindClose(m_handle);
+      if (m_tfs)
+        m_tfs->print_result("CloseHandle", res, true);
+      if (!res)
+        if (m_tfs)
+          m_tfs->print_error("CloseHandle", res, true);
+        else
+          std::fprintf(stderr, "CloseHandle failed : %d", GetLastError());
       m_handle = NULL;
     }
   }
 
 private:
   HANDLE m_handle;
+  TestFileSystem* m_tfs;
 };
 
 const char* TestW32Api::id()
@@ -77,7 +93,9 @@ TestFileSystem::FileInfoList TestW32Api::list_directory(const path& directory_pa
   print_operation("Querying directory", directory_path);
 
   WIN32_FIND_DATA fd;
-  SafeFindHandle find = FindFirstFileW((directory_path / L"*").c_str(), &fd);
+  SafeFindHandle find(this,
+    FindFirstFileW((directory_path / L"*").c_str(), &fd));
+  print_result("FindFirstFileW", find.result_for_print(), true);
   if (!find.valid())
     throw test::WinFuncFailed("FindFirstFileW");
 
@@ -85,7 +103,9 @@ TestFileSystem::FileInfoList TestW32Api::list_directory(const path& directory_pa
   while (true)
   {
     files.push_back(FileInformation(fd.cFileName, fd.dwFileAttributes, fd.nFileSizeHigh*(MAXDWORD + 1) + fd.nFileSizeLow));
-    if (!FindNextFileW(find, &fd))
+    BOOL res = FindNextFileW(find, &fd);
+    print_result("FindNextFileW", res, true);
+    if (!res)
       break;
   }
 
@@ -101,13 +121,14 @@ void TestW32Api::create_path(const path& directory_path)
   print_operation("Checking directory", directory_path);
 
   DWORD attr = GetFileAttributesW(directory_path.c_str());
+  DWORD err = GetLastError();
+  print_result("GetFileAttributesW", attr, true);
   if (attr != INVALID_FILE_ATTRIBUTES) {
     if (attr & FILE_ATTRIBUTE_DIRECTORY)
       return; // if directory already exists all is good
     else
       throw std::runtime_error("path exists but not a directory");
   }
-  DWORD err = GetLastError();
   if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
     throw test::WinFuncFailed("GetFileAttributesW");
 
@@ -116,7 +137,9 @@ void TestW32Api::create_path(const path& directory_path)
   if (err != ERROR_FILE_NOT_FOUND) // ERROR_FILE_NOT_FOUND means parent directory already exists
     create_path(directory_path.parent_path()); // otherwise create parent directory (recursively)
 
-  if (!CreateDirectoryW(directory_path.c_str(), NULL))
+  BOOL res = CreateDirectoryW(directory_path.c_str(), NULL);
+  print_result("CreateDirectoryW", res, true);
+  if (!res)
     throw test::WinFuncFailed("CreateDirectoryW");
 }
 
@@ -124,8 +147,9 @@ void TestW32Api::read_file(const path& file_path)
 {
   print_operation("Reading file", file_path);
 
-  SafeHandle file =
-    CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  SafeHandle file(this,
+    CreateFileW(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
+  print_result("CreateFileW", file.result_for_print(), true);
   if (!file.valid())
     throw test::WinFuncFailed("CreateFile");
 
@@ -136,7 +160,9 @@ void TestW32Api::read_file(const path& file_path)
     char buf[4096];
 
     DWORD read = 0;
-    if (!ReadFile(file, buf, sizeof(buf), &read, NULL))
+    BOOL res = ReadFile(file, buf, sizeof(buf), &read, NULL);
+    print_result("ReadFile", res, true);
+    if (!res)
       throw test::WinFuncFailed("ReadFile");
     if (!read) // eof
       break;
@@ -181,21 +207,26 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
   DWORD disposition = overwrite ? CREATE_ALWAYS : OPEN_EXISTING; // FILE_SUPERSEDE for the overwrite case should be relatively easy for usvfs to handle
                                                                  // as it leave no doubt we are replacing the old file (if such exists)
 
-  SafeHandle file =
-    CreateFile(file_path.c_str(), access, 0, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL);
+  SafeHandle file(this,
+    CreateFile(file_path.c_str(), access, 0, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL));
+  print_result("CreateFileW", file.result_for_print(), true);
   if (!file.valid())
     throw test::WinFuncFailed("CreateFile");
 
   if (!overwrite)
   {
     // in case we didn't overwrite the file, we need to truncate it:
-    if (!SetEndOfFile(file))
+    BOOL res = SetEndOfFile(file);
+    print_result("SetEndOfFile", res, true);
+    if (!res)
       throw test::WinFuncFailed("SetEndOfFile");
   }
 
   // finally write the data:
   DWORD written = 0;
-  if (!WriteFile(file, data, static_cast<DWORD>(size), &written, NULL))
+  BOOL res = WriteFile(file, data, static_cast<DWORD>(size), &written, NULL);
+  print_result("WriteFile", res, true);
+  if (!res)
     throw test::WinFuncFailed("WriteFile");
 
   if (output())

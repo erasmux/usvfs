@@ -996,6 +996,35 @@ BOOL WINAPI usvfs::hooks::MoveFileExA(LPCSTR lpExistingFileName,
                      dwFlags);
 }
 
+static inline WCHAR pathNameDriveLetter(LPCWSTR path)
+{
+  if (!path || !path[0])
+    return 0;
+  if (path[1] == ':')
+    return path[0];
+  // if path is not ?: or \* then we need to get absolute path:
+  std::wstring buf;
+  if (path[0] != '\\') {
+    buf = winapi::wide::getFullPathName(path).first;
+    path = buf.c_str();
+    if (!path[0] || path[1] == ':')
+      return path[0];
+  }
+  // check for \??\C:
+  if (path[1] && path[2] && path[3] && path[4] && path[0] == '\\' && path[3] == '\\' && path[5] == ':')
+    return path[4];
+  // give up
+  return 0;
+}
+
+// returns false also in case we will to determine the drive letter of the path
+static inline bool pathesOnDifferentDrives(LPCWSTR path1, LPCWSTR path2)
+{
+  WCHAR drive1 = pathNameDriveLetter(path1);
+  WCHAR drive2 = pathNameDriveLetter(path2);
+  return drive1 && drive2 && towupper(drive1) != towupper(drive2);
+}
+
 BOOL WINAPI usvfs::hooks::MoveFileExW(LPCWSTR lpExistingFileName,
                                       LPCWSTR lpNewFileName, DWORD dwFlags)
 {
@@ -1005,15 +1034,22 @@ BOOL WINAPI usvfs::hooks::MoveFileExW(LPCWSTR lpExistingFileName,
 
   RerouteW readReroute;
   RerouteW writeReroute;
+  DWORD newFlags = dwFlags;
 
   {
     auto context = READ_CONTEXT();
     readReroute  = RerouteW::create(context, callContext, lpExistingFileName);
     writeReroute = RerouteW::createNew(context, callContext, lpNewFileName);
+    // if original read and write were on the same drive but the after the reroute we now
+    // need to move file between different drives force the MOVEFILE_COPY_ALLOWED flag:
+    if ((newFlags & MOVEFILE_COPY_ALLOWED) == 0 && (readReroute.wasRerouted() || writeReroute.wasRerouted())
+      && pathesOnDifferentDrives(readReroute.fileName(), writeReroute.fileName())
+      && !pathesOnDifferentDrives(lpExistingFileName, lpNewFileName))
+      newFlags |= MOVEFILE_COPY_ALLOWED;
   }
 
   PRE_REALCALL
-  res = ::MoveFileExW(readReroute.fileName(), writeReroute.fileName(), dwFlags);
+  res = ::MoveFileExW(readReroute.fileName(), writeReroute.fileName(), newFlags);
   POST_REALCALL
 
   if (res) {
@@ -1030,6 +1066,8 @@ BOOL WINAPI usvfs::hooks::MoveFileExW(LPCWSTR lpExistingFileName,
     LOG_CALL()
         .PARAMWRAP(readReroute.fileName())
         .PARAMWRAP(writeReroute.fileName())
+        .PARAMWRAP(dwFlags)
+        .PARAMWRAP(newFlags)
         .PARAM(res)
         .PARAM(::GetLastError());
   }

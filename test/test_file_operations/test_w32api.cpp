@@ -132,10 +132,10 @@ void TestW32Api::create_path(const path& directory_path)
   if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
     throw test::WinFuncFailed("GetFileAttributesW");
 
-  print_operation("Creating directory", directory_path);
-
   if (err != ERROR_FILE_NOT_FOUND) // ERROR_FILE_NOT_FOUND means parent directory already exists
     create_path(directory_path.parent_path()); // otherwise create parent directory (recursively)
+
+  print_operation("Creating directory", directory_path);
 
   BOOL res = CreateDirectoryW(directory_path.c_str(), NULL);
   print_result("CreateDirectoryW", res, true);

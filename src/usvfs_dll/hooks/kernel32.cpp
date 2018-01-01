@@ -836,18 +836,41 @@ BOOL WINAPI usvfs::hooks::GetFileAttributesExW(
 
   HOOK_START_GROUP(MutExHookGroup::FILE_ATTRIBUTES)
 
-  RerouteW reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
+    RerouteW reroute = RerouteW::create(READ_CONTEXT(), callContext, lpFileName, false);
+  if (!reroute.wasRerouted())
+    // in case the target does not exist but parent folder is virtualized we want to
+    // reroute to the virtualized folder:
+    reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
+
   PRE_REALCALL
   res = ::GetFileAttributesExW(reroute.fileName(), fInfoLevelId,
                                lpFileInformation);
   POST_REALCALL
 
   if (reroute.wasRerouted()) {
+    DWORD originalError = callContext.lastError();
+    DWORD fixedError = originalError;
+    // in case the target folder is virtualized and does not exist but its parent does
+    // exists (in the virtualized sense) it might not exist in the virtualized reroute
+    // (i.e. querying Data\hello\world where overwrite\hello does not exist but mod\mymod\hello does)
+    /// in which case we need to fix the error value:
+    if (res == INVALID_FILE_ATTRIBUTES && fixedError == ERROR_PATH_NOT_FOUND)
+    {
+      fs::path originalPath(lpFileName);
+      RerouteW rerouteParent = RerouteW::create(READ_CONTEXT(), callContext, originalPath.parent_path().c_str(), false);
+      DWORD resParent = ::GetFileAttributesW(rerouteParent.fileName());
+      if (resParent != INVALID_FILE_ATTRIBUTES && (resParent & FILE_ATTRIBUTE_DIRECTORY))
+        fixedError = ERROR_FILE_NOT_FOUND;
+    }
+    if (fixedError != originalError)
+      callContext.updateLastError(fixedError);
+
     LOG_CALL()
         .PARAMWRAP(lpFileName)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(::GetLastError());
+        .PARAMHEX(originalError)
+        .PARAMHEX(fixedError);
   }
 
   HOOK_END
@@ -866,18 +889,40 @@ DWORD WINAPI usvfs::hooks::GetFileAttributesW(LPCWSTR lpFileName)
 
   HOOK_START_GROUP(MutExHookGroup::FILE_ATTRIBUTES)
 
-  RerouteW reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
+  RerouteW reroute = RerouteW::create(READ_CONTEXT(), callContext, lpFileName, false);
+  if (!reroute.wasRerouted())
+    // in case the target does not exist but parent folder is virtualized we want to
+    // reroute to the virtualized folder:
+    reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
+
   PRE_REALCALL
   res = ::GetFileAttributesW(reroute.fileName());
   POST_REALCALL
 
   if (reroute.wasRerouted()) {
+    DWORD originalError = callContext.lastError();
+    DWORD fixedError = originalError;
+    // in case the target folder is virtualized and does not exist but its parent does
+    // exists (in the virtualized sense) it might not exist in the virtualized reroute
+    // (i.e. querying Data\hello\world where overwrite\hello does not exist but mod\mymod\hello does)
+    /// in which case we need to fix the error value:
+    if (res == INVALID_FILE_ATTRIBUTES && fixedError == ERROR_PATH_NOT_FOUND)
+    {
+      fs::path originalPath(lpFileName);
+      RerouteW rerouteParent = RerouteW::create(READ_CONTEXT(), callContext, originalPath.parent_path().c_str(), false);
+      DWORD resParent = ::GetFileAttributesW(rerouteParent.fileName());
+      if (resParent != INVALID_FILE_ATTRIBUTES && (resParent & FILE_ATTRIBUTE_DIRECTORY))
+        fixedError = ERROR_FILE_NOT_FOUND;
+    }
+    if (fixedError != originalError)
+      callContext.updateLastError(fixedError);
+
     LOG_CALL()
         .PARAMWRAP(lpFileName)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(callContext.lastError());
-    ;
+        .PARAMHEX(originalError)
+        .PARAMHEX(fixedError);
   }
 
   HOOK_ENDP(usvfs::log::wrap(lpFileName));

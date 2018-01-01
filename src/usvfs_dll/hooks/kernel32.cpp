@@ -879,11 +879,16 @@ BOOL WINAPI usvfs::hook_GetFileAttributesExW(
     /// in which case we need to fix the error value:
     if (res == INVALID_FILE_ATTRIBUTES && fixedError == ERROR_PATH_NOT_FOUND)
     {
-      fs::path originalPath(lpFileName);
-      RerouteW rerouteParent = RerouteW::create(READ_CONTEXT(), callContext, originalPath.parent_path().c_str(), false);
-      DWORD resParent = ::GetFileAttributesW(rerouteParent.fileName());
+      fs::path originalParent = fs::path(lpFileName).parent_path();
+      DWORD resParent = ::GetFileAttributesW(originalParent.c_str());
       if (resParent != INVALID_FILE_ATTRIBUTES && (resParent & FILE_ATTRIBUTE_DIRECTORY))
         fixedError = ERROR_FILE_NOT_FOUND;
+      else {
+        RerouteW rerouteParent = RerouteW::create(READ_CONTEXT(), callContext, originalParent.c_str(), false);
+        DWORD resParent = ::GetFileAttributesW(rerouteParent.fileName());
+        if (resParent != INVALID_FILE_ATTRIBUTES && (resParent & FILE_ATTRIBUTE_DIRECTORY))
+          fixedError = ERROR_FILE_NOT_FOUND;
+      }
     }
     if (fixedError != originalError)
       callContext.updateLastError(fixedError);

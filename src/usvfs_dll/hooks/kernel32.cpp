@@ -599,7 +599,6 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
     DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
   HANDLE res = INVALID_HANDLE_VALUE;
-  DWORD error = 0;
 
   HOOK_START_GROUP(MutExHookGroup::OPEN_FILE)
 
@@ -664,17 +663,6 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
                       dwFlagsAndAttributes, hTemplateFile);
   POST_REALCALL
 
-  if (res == INVALID_HANDLE_VALUE) {
-    switch (dwCreationDisposition) {
-    case 3:
-    case 5:
-      error = ERROR_FILE_NOT_FOUND;
-      break;
-    default:
-      error = ::GetLastError();
-    }
-  }
-
   if (create && (res != INVALID_HANDLE_VALUE)) {
     spdlog::get("hooks")
         ->info("add file to vfs: {}",
@@ -698,11 +686,9 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
       .PARAMHEX(dwCreationDisposition)
       .PARAMHEX(dwFlagsAndAttributes)
       .PARAMHEX(res)
-      .PARAMHEX(error);
+      .PARAMHEX(callContext.lastError());
   }
   HOOK_END
-
-  ::SetLastError(error);
 
   return res;
 }
@@ -710,7 +696,6 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
 HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams)
 {
   HANDLE res = INVALID_HANDLE_VALUE;
-  DWORD error = 0;
 
   typedef HANDLE(WINAPI * CreateFile2_t)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTENDED_PARAMETERS);
 
@@ -783,17 +768,6 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
   res = dCreateFile2(reroute.fileName(), dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
   POST_REALCALL
 
-  if (res == INVALID_HANDLE_VALUE) {
-    switch (dwCreationDisposition) {
-    case 3:
-    case 5:
-      error = ERROR_FILE_NOT_FOUND;
-      break;
-    default:
-      error = ::GetLastError();
-    }
-  }
-
   if (create && (res != INVALID_HANDLE_VALUE)) {
     spdlog::get("hooks")
       ->info("add file to vfs: {}",
@@ -826,11 +800,9 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
       .PARAMHEX(dwFileAttributes)
       .PARAMHEX(dwFileFlags)
       .PARAMHEX(res)
-      .PARAMHEX(error);
+      .PARAMHEX(callContext.lastError());
   }
   HOOK_END
-
-  ::SetLastError(error);
 
   return res;
 }
@@ -1045,7 +1017,7 @@ BOOL WINAPI usvfs::hook_MoveFileW(LPCWSTR lpExistingFileName,
         .PARAMWRAP(readReroute.fileName())
         .PARAMWRAP(writeReroute.fileName())
         .PARAM(res)
-        .PARAM(::GetLastError());
+        .PARAM(callContext.lastError());
   }
 
   HOOK_END
@@ -1134,7 +1106,7 @@ BOOL WINAPI usvfs::hook_MoveFileExW(LPCWSTR lpExistingFileName,
         .PARAMWRAP(dwFlags)
         .PARAMWRAP(newFlags)
         .PARAM(res)
-        .PARAM(::GetLastError());
+        .PARAM(callContext.lastError());
   }
 
   HOOK_END
@@ -1182,7 +1154,7 @@ BOOL WINAPI usvfs::hook_CopyFileW(LPCWSTR lpExistingFileName,
         .PARAMWRAP(readReroute.fileName())
         .PARAMWRAP(writeReroute.fileName())
         .PARAM(res)
-        .PARAM(::GetLastError());
+        .PARAM(callContext.lastError());
   }
 
   HOOK_END
@@ -1237,7 +1209,7 @@ BOOL WINAPI usvfs::hook_CopyFileExW(LPCWSTR lpExistingFileName,
         .PARAMWRAP(readReroute.fileName())
         .PARAMWRAP(writeReroute.fileName())
         .PARAM(res)
-        .PARAM(::GetLastError());
+        .PARAM(callContext.lastError());
   }
 
   HOOK_END
@@ -1429,7 +1401,7 @@ DWORD WINAPI usvfs::hook_GetFullPathNameW(LPCWSTR lpFileName,
         .PARAMWRAP(lpFileName)
         .PARAMWRAP(lpBuffer)
         .PARAM(res)
-        .PARAM(::GetLastError());
+        .PARAM(callContext.lastError());
   }
 
   return res;
@@ -1472,7 +1444,7 @@ DWORD WINAPI usvfs::hook_GetModuleFileNameW(HMODULE hModule,
           .addParam("lpFilename", usvfs::log::Wrap<LPCWSTR>(
                       (res != 0UL) ? lpFilename : L"<not set>"))
           .PARAM(nSize)
-          .PARAMHEX(::GetLastError())
+          .PARAMHEX(callContext.lastError())
           .PARAM(res);
     }
   }
@@ -1751,7 +1723,7 @@ HRESULT WINAPI usvfs::hook_CopyFile2(PCWSTR pwszExistingFileName, PCWSTR pwszNew
       .PARAMWRAP(readReroute.fileName())
       .PARAMWRAP(writeReroute.fileName())
       .PARAM(res)
-      .PARAM(::GetLastError());
+      .PARAM(callContext.lastError());
   }
 
   HOOK_END
@@ -1780,7 +1752,7 @@ DWORD WINAPI usvfs::hook_GetPrivateProfileSectionNamesA(LPSTR lpszReturnBuffer, 
         .PARAMHEX(nSize)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(::GetLastError());
+        .PARAMHEX(callContext.lastError());
     }
   HOOK_END
 
@@ -1808,7 +1780,7 @@ DWORD WINAPI usvfs::hook_GetPrivateProfileSectionNamesW(LPWSTR lpszReturnBuffer,
         .PARAMHEX(nSize)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(::GetLastError());
+        .PARAMHEX(callContext.lastError());
     }
   HOOK_END
 
@@ -1836,7 +1808,7 @@ DWORD WINAPI usvfs::hook_GetPrivateProfileSectionA(LPCSTR lpAppName, LPSTR lpRet
         .PARAMHEX(nSize)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(::GetLastError());
+        .PARAMHEX(callContext.lastError());
     }
   HOOK_END
 
@@ -1864,7 +1836,7 @@ DWORD WINAPI usvfs::hook_GetPrivateProfileSectionW(LPCWSTR lpAppName, LPWSTR lpR
         .PARAMHEX(nSize)
         .PARAMWRAP(reroute.fileName())
         .PARAMHEX(res)
-        .PARAMHEX(::GetLastError());
+        .PARAMHEX(callContext.lastError());
     }
   HOOK_END
 
@@ -1924,7 +1896,7 @@ BOOL WINAPI usvfs::hook_WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR lp
       .PARAMWRAP(lpFileName)
       .PARAMWRAP(reroute.fileName())
       .PARAMHEX(res)
-      .PARAMHEX(::GetLastError());
+      .PARAMHEX(callContext.lastError());
   }
 
   HOOK_END

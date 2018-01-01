@@ -172,7 +172,8 @@ public:
 
   static RerouteW createNew(const usvfs::HookContext::ConstPtr &context,
                             const usvfs::HookCallContext &callContext,
-                            LPCWSTR inPath, bool createPath = true)
+                            LPCWSTR inPath, bool createPath = true,
+                            LPSECURITY_ATTRIBUTES securityAttributes = nullptr)
   {
     UNUSED_VAR(callContext);
     RerouteW result;
@@ -209,7 +210,7 @@ public:
             OutputDebugStringW(L"]\n");
             if (IsDebuggerPresent()) __debugbreak();
             usvfs::FunctionGroupLock lock(usvfs::MutExHookGroup::ALL_GROUPS);
-            winapi::ex::wide::createPath(fs::path(result.m_Buffer).parent_path());
+            winapi::ex::wide::createPath(fs::path(result.m_Buffer).parent_path(), securityAttributes);
           } catch (const std::exception &e) {
             spdlog::get("hooks")
                 ->error("failed to create {}: {}",
@@ -559,11 +560,14 @@ BOOL WINAPI usvfs::hook_CreateProcessW(
   return res;
 }
 
-bool fileExists(LPCWSTR fileName)
+// returns true if the fileName does not exist but its parent folder does exist
+// notice since we are calling our patched GetFileAttributesW here this will also
+// check if fileName maps to an existing file/dir and will also check if the parent
+// folder is mapped to any directory
+bool pathDirectlyAvailable(LPCWSTR fileName)
 {
   DWORD attrib = GetFileAttributesW(fileName);
-  return ((attrib != INVALID_FILE_ATTRIBUTES)
-          && !(attrib & FILE_ATTRIBUTE_DIRECTORY));
+  return attrib == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND;
 }
 
 DWORD fileAttributesRegular(LPCWSTR fileName)
@@ -645,17 +649,12 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
   {
     auto context = READ_CONTEXT();
     reroute      = RerouteW::create(context, callContext, lpFileName);
-    if (((dwCreationDisposition == CREATE_ALWAYS)
-         || (dwCreationDisposition == CREATE_NEW))
-        && !reroute.wasRerouted() && !fileExists(lpFileName)) {
-      // the file will be created so now we need to know where
-      reroute = RerouteW::createNew(context, callContext, lpFileName);
+    if (!reroute.wasRerouted()
+      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW)
+      && pathDirectlyAvailable(lpFileName))
+    {
+      reroute = RerouteW::createNew(context, callContext, lpFileName, true, lpSecurityAttributes);
       create  = reroute.wasRerouted();
-
-      if (create) {
-        fs::path target(reroute.fileName());
-        winapi::ex::wide::createPath(target.parent_path(), lpSecurityAttributes);
-      }
     }
   }
 
@@ -771,20 +770,12 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
   {
     auto context = READ_CONTEXT();
     reroute = RerouteW::create(context, callContext, lpFileName);
-    if (((dwCreationDisposition == CREATE_ALWAYS)
-      || (dwCreationDisposition == CREATE_NEW) || (isDir && storePath))
-      && !reroute.wasRerouted() && !fileExists(lpFileName)) {
-      // the file will be created so now we need to know where
-      reroute = RerouteW::createNew(context, callContext, lpFileName);
-      create = (reroute.wasRerouted() || (isDir && storePath));
-
-      if (create) {
-        fs::path target(reroute.fileName());
-        if (pCreateExParams != nullptr)
-          winapi::ex::wide::createPath(target.parent_path(), pCreateExParams->lpSecurityAttributes);
-        else
-          winapi::ex::wide::createPath(target.parent_path());
-      }
+    if (!reroute.wasRerouted()
+      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW)
+      && pathDirectlyAvailable(lpFileName))
+    {
+      reroute = RerouteW::createNew(context, callContext, lpFileName, true, pCreateExParams ? pCreateExParams->lpSecurityAttributes : nullptr);
+      create = reroute.wasRerouted();
     }
   }
 
@@ -1906,15 +1897,9 @@ BOOL WINAPI usvfs::hook_WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR lp
   {
     auto context = READ_CONTEXT();
     reroute = RerouteW::create(context, callContext, lpFileName);
-    if (!reroute.wasRerouted() && !fileExists(lpFileName)) {
-      // the file will be created so now we need to know where
+    if (!reroute.wasRerouted() && pathDirectlyAvailable(lpFileName)) {
       reroute = RerouteW::createNew(context, callContext, lpFileName);
-      create = (reroute.wasRerouted());
-
-      if (create) {
-        fs::path target(reroute.fileName());
-        winapi::ex::wide::createPath(target.parent_path());
-      }
+      create = reroute.wasRerouted();
     }
   }
 

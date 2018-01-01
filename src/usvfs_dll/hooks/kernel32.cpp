@@ -1291,7 +1291,7 @@ DLLEXPORT BOOL WINAPI usvfs::hooks::CreateDirectoryW(
   BOOL res = FALSE;
   HOOK_START
   RerouteW reroute
-      = RerouteW::create(READ_CONTEXT(), callContext, lpPathName);
+      = RerouteW::createNew(READ_CONTEXT(), callContext, lpPathName);
 
   PRE_REALCALL
   if (reroute.wasRerouted()) {

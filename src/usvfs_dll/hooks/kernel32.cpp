@@ -649,7 +649,7 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
     auto context = READ_CONTEXT();
     reroute      = RerouteW::create(context, callContext, lpFileName);
     if (!reroute.wasRerouted()
-      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW)
+      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS)
       && pathDirectlyAvailable(lpFileName))
     {
       reroute = RerouteW::createNew(context, callContext, lpFileName, true, lpSecurityAttributes);
@@ -756,7 +756,7 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
     auto context = READ_CONTEXT();
     reroute = RerouteW::create(context, callContext, lpFileName);
     if (!reroute.wasRerouted()
-      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW)
+      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS)
       && pathDirectlyAvailable(lpFileName))
     {
       reroute = RerouteW::createNew(context, callContext, lpFileName, true, pCreateExParams ? pCreateExParams->lpSecurityAttributes : nullptr);

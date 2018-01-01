@@ -242,7 +242,7 @@ private:
   };
 };
 
-HMODULE WINAPI usvfs::hooks::LoadLibraryW(LPCWSTR lpFileName)
+HMODULE WINAPI usvfs::hook_LoadLibraryW(LPCWSTR lpFileName)
 {
   HMODULE res = nullptr;
 
@@ -263,13 +263,13 @@ HMODULE WINAPI usvfs::hooks::LoadLibraryW(LPCWSTR lpFileName)
   return res;
 }
 
-HMODULE WINAPI usvfs::hooks::LoadLibraryA(LPCSTR lpFileName)
+HMODULE WINAPI usvfs::hook_LoadLibraryA(LPCSTR lpFileName)
 {
-  return usvfs::hooks::LoadLibraryW(
+  return LoadLibraryW(
       ush::string_cast<std::wstring>(lpFileName).c_str());
 }
 
-HMODULE WINAPI usvfs::hooks::LoadLibraryExW(LPCWSTR lpFileName, HANDLE hFile,
+HMODULE WINAPI usvfs::hook_LoadLibraryExW(LPCWSTR lpFileName, HANDLE hFile,
                                             DWORD dwFlags)
 {
   HMODULE res = nullptr;
@@ -290,10 +290,10 @@ HMODULE WINAPI usvfs::hooks::LoadLibraryExW(LPCWSTR lpFileName, HANDLE hFile,
   return res;
 }
 
-HMODULE WINAPI usvfs::hooks::LoadLibraryExA(LPCSTR lpFileName, HANDLE hFile,
+HMODULE WINAPI usvfs::hook_LoadLibraryExA(LPCSTR lpFileName, HANDLE hFile,
                                             DWORD dwFlags)
 {
-  return usvfs::hooks::LoadLibraryExW(
+  return LoadLibraryExW(
       ush::string_cast<std::wstring>(lpFileName).c_str(), hFile, dwFlags);
 }
 
@@ -333,7 +333,7 @@ std::wstring getBinaryName(LPCWSTR applicationName, LPCWSTR lpCommandLine)
   }
 }
 
-BOOL WINAPI usvfs::hooks::CreateProcessA(
+BOOL WINAPI usvfs::hook_CreateProcessA(
     LPCSTR lpApplicationName, LPSTR lpCommandLine,
     LPSECURITY_ATTRIBUTES lpProcessAttributes,
     LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
@@ -450,7 +450,7 @@ BOOL WINAPI usvfs::hooks::CreateProcessA(
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::CreateProcessW(
+BOOL WINAPI usvfs::hook_CreateProcessW(
     LPCWSTR lpApplicationName, LPWSTR lpCommandLine,
     LPSECURITY_ATTRIBUTES lpProcessAttributes,
     LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
@@ -578,18 +578,18 @@ DWORD fileAttributesRegular(LPCSTR fileName)
   return GetFileAttributesW(ush::string_cast<std::wstring>(fileName).c_str());
 }
 
-HANDLE WINAPI usvfs::hooks::CreateFileA(
+HANDLE WINAPI usvfs::hook_CreateFileA(
     LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
     LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
     DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
-  return usvfs::hooks::CreateFileW(
+  return CreateFileW(
       ush::string_cast<std::wstring>(lpFileName).c_str(), dwDesiredAccess,
       dwShareMode, lpSecurityAttributes, dwCreationDisposition,
       dwFlagsAndAttributes, hTemplateFile);
 }
 
-HANDLE WINAPI usvfs::hooks::CreateFileW(
+HANDLE WINAPI usvfs::hook_CreateFileW(
     LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
     LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
     DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
@@ -708,7 +708,7 @@ HANDLE WINAPI usvfs::hooks::CreateFileW(
   return res;
 }
 
-HANDLE WINAPI usvfs::hooks::CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams)
+HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams)
 {
   HANDLE res = INVALID_HANDLE_VALUE;
   DWORD error = 0;
@@ -844,14 +844,14 @@ HANDLE WINAPI usvfs::hooks::CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAcces
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::GetFileAttributesExA(
+BOOL WINAPI usvfs::hook_GetFileAttributesExA(
   LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
   LPVOID lpFileInformation)
 {
-  return usvfs::hooks::GetFileAttributesExW(ush::string_cast<std::wstring>(lpFileName).c_str(), fInfoLevelId, lpFileInformation);
+  return GetFileAttributesExW(ush::string_cast<std::wstring>(lpFileName).c_str(), fInfoLevelId, lpFileInformation);
 }
 
-BOOL WINAPI usvfs::hooks::GetFileAttributesExW(
+BOOL WINAPI usvfs::hook_GetFileAttributesExW(
     LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
     LPVOID lpFileInformation)
 {
@@ -901,12 +901,12 @@ BOOL WINAPI usvfs::hooks::GetFileAttributesExW(
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetFileAttributesA(LPCSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetFileAttributesA(LPCSTR lpFileName)
 {
-  return usvfs::hooks::GetFileAttributesW(ush::string_cast<std::wstring>(lpFileName).c_str());
+  return GetFileAttributesW(ush::string_cast<std::wstring>(lpFileName).c_str());
 }
 
-DWORD WINAPI usvfs::hooks::GetFileAttributesW(LPCWSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetFileAttributesW(LPCWSTR lpFileName)
 {
   DWORD res = 0UL;
 
@@ -953,7 +953,7 @@ DWORD WINAPI usvfs::hooks::GetFileAttributesW(LPCWSTR lpFileName)
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::SetFileAttributesW(
+DWORD WINAPI usvfs::hook_SetFileAttributesW(
 	LPCWSTR lpFileName, DWORD dwFileAttributes)
 {
   DWORD res = 0UL;
@@ -974,7 +974,7 @@ DWORD WINAPI usvfs::hooks::SetFileAttributesW(
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::DeleteFileW(LPCWSTR lpFileName)
+BOOL WINAPI usvfs::hook_DeleteFileW(LPCWSTR lpFileName)
 {
   BOOL res = FALSE;
 
@@ -1000,21 +1000,21 @@ BOOL WINAPI usvfs::hooks::DeleteFileW(LPCWSTR lpFileName)
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::DeleteFileA(LPCSTR lpFileName)
+BOOL WINAPI usvfs::hook_DeleteFileA(LPCSTR lpFileName)
 {
-  return usvfs::hooks::DeleteFileW(
+  return DeleteFileW(
       ush::string_cast<std::wstring>(lpFileName).c_str());
 }
 
-BOOL WINAPI usvfs::hooks::MoveFileA(LPCSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_MoveFileA(LPCSTR lpExistingFileName,
                                     LPCSTR lpNewFileName)
 {
-  return usvfs::hooks::MoveFileW(
+  return MoveFileW(
       ush::string_cast<std::wstring>(lpExistingFileName).c_str(),
       ush::string_cast<std::wstring>(lpNewFileName).c_str());
 }
 
-BOOL WINAPI usvfs::hooks::MoveFileW(LPCWSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_MoveFileW(LPCWSTR lpExistingFileName,
                                     LPCWSTR lpNewFileName)
 {
   BOOL res = FALSE;
@@ -1057,7 +1057,7 @@ BOOL WINAPI usvfs::hooks::MoveFileW(LPCWSTR lpExistingFileName,
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::MoveFileExA(LPCSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_MoveFileExA(LPCSTR lpExistingFileName,
                                       LPCSTR lpNewFileName, DWORD dwFlags)
 {
   return MoveFileExW(ush::string_cast<std::wstring>(lpExistingFileName).c_str(),
@@ -1094,7 +1094,7 @@ static inline bool pathesOnDifferentDrives(LPCWSTR path1, LPCWSTR path2)
   return drive1 && drive2 && towupper(drive1) != towupper(drive2);
 }
 
-BOOL WINAPI usvfs::hooks::MoveFileExW(LPCWSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_MoveFileExW(LPCWSTR lpExistingFileName,
                                       LPCWSTR lpNewFileName, DWORD dwFlags)
 {
   BOOL res = FALSE;
@@ -1146,7 +1146,7 @@ BOOL WINAPI usvfs::hooks::MoveFileExW(LPCWSTR lpExistingFileName,
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::CopyFileA(LPCSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_CopyFileA(LPCSTR lpExistingFileName,
                                     LPCSTR lpNewFileName, BOOL bFailIfExists)
 {
   return CopyFileW(ush::string_cast<std::wstring>(lpExistingFileName).c_str(),
@@ -1154,7 +1154,7 @@ BOOL WINAPI usvfs::hooks::CopyFileA(LPCSTR lpExistingFileName,
                    bFailIfExists);
 }
 
-BOOL WINAPI usvfs::hooks::CopyFileW(LPCWSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_CopyFileW(LPCWSTR lpExistingFileName,
                                     LPCWSTR lpNewFileName, BOOL bFailIfExists)
 {
   BOOL res = FALSE;
@@ -1194,7 +1194,7 @@ BOOL WINAPI usvfs::hooks::CopyFileW(LPCWSTR lpExistingFileName,
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::CopyFileExA(LPCSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_CopyFileExA(LPCSTR lpExistingFileName,
                                       LPCSTR lpNewFileName,
                                       LPPROGRESS_ROUTINE lpProgressRoutine,
                                       LPVOID lpData, LPBOOL pbCancel,
@@ -1206,7 +1206,7 @@ BOOL WINAPI usvfs::hooks::CopyFileExA(LPCSTR lpExistingFileName,
       lpData, pbCancel, dwCopyFlags);
 }
 
-BOOL WINAPI usvfs::hooks::CopyFileExW(LPCWSTR lpExistingFileName,
+BOOL WINAPI usvfs::hook_CopyFileExW(LPCWSTR lpExistingFileName,
                                       LPCWSTR lpNewFileName,
                                       LPPROGRESS_ROUTINE lpProgressRoutine,
                                       LPVOID lpData, LPBOOL pbCancel,
@@ -1249,12 +1249,12 @@ BOOL WINAPI usvfs::hooks::CopyFileExW(LPCWSTR lpExistingFileName,
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetCurrentDirectoryA(DWORD nBufferLength,
+DWORD WINAPI usvfs::hook_GetCurrentDirectoryA(DWORD nBufferLength,
                                                 LPSTR lpBuffer)
 {
   std::wstring buffer;
   buffer.resize(nBufferLength);
-  DWORD res = usvfs::hooks::GetCurrentDirectoryW(nBufferLength, &buffer[0]);
+  DWORD res = usvfs::hook_GetCurrentDirectoryW(nBufferLength, &buffer[0]);
 
   if (res > 0) {
       res = WideCharToMultiByte(CP_ACP, 0, buffer.c_str(), res+1,
@@ -1264,7 +1264,7 @@ DWORD WINAPI usvfs::hooks::GetCurrentDirectoryA(DWORD nBufferLength,
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetCurrentDirectoryW(DWORD nBufferLength,
+DWORD WINAPI usvfs::hook_GetCurrentDirectoryW(DWORD nBufferLength,
                                                 LPWSTR lpBuffer)
 {
   DWORD res = FALSE;
@@ -1300,12 +1300,12 @@ DWORD WINAPI usvfs::hooks::GetCurrentDirectoryW(DWORD nBufferLength,
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::SetCurrentDirectoryA(LPCSTR lpPathName) {
-  return usvfs::hooks::SetCurrentDirectoryW(
+BOOL WINAPI usvfs::hook_SetCurrentDirectoryA(LPCSTR lpPathName) {
+  return SetCurrentDirectoryW(
       ush::string_cast<std::wstring>(lpPathName).c_str());
 }
 
-BOOL WINAPI usvfs::hooks::SetCurrentDirectoryW(LPCWSTR lpPathName)
+BOOL WINAPI usvfs::hook_SetCurrentDirectoryW(LPCWSTR lpPathName)
 {
   BOOL res = FALSE;
 
@@ -1354,7 +1354,7 @@ BOOL WINAPI usvfs::hooks::SetCurrentDirectoryW(LPCWSTR lpPathName)
 }
 
 
-DLLEXPORT BOOL WINAPI usvfs::hooks::CreateDirectoryW(
+DLLEXPORT BOOL WINAPI usvfs::hook_CreateDirectoryW(
     LPCWSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
 {
   BOOL res = FALSE;
@@ -1374,7 +1374,7 @@ DLLEXPORT BOOL WINAPI usvfs::hooks::CreateDirectoryW(
   return res;
 }
 
-DLLEXPORT BOOL WINAPI usvfs::hooks::RemoveDirectoryW(
+DLLEXPORT BOOL WINAPI usvfs::hook_RemoveDirectoryW(
 	LPCWSTR lpPathName)
 {
 
@@ -1404,7 +1404,7 @@ DLLEXPORT BOOL WINAPI usvfs::hooks::RemoveDirectoryW(
 }
 
 
-DWORD WINAPI usvfs::hooks::GetFullPathNameW(LPCWSTR lpFileName,
+DWORD WINAPI usvfs::hook_GetFullPathNameW(LPCWSTR lpFileName,
                                             DWORD nBufferLength,
                                             LPWSTR lpBuffer, LPWSTR *lpFilePart)
 {
@@ -1440,7 +1440,7 @@ DWORD WINAPI usvfs::hooks::GetFullPathNameW(LPCWSTR lpFileName,
 }
 
 
-DWORD WINAPI usvfs::hooks::GetModuleFileNameW(HMODULE hModule,
+DWORD WINAPI usvfs::hook_GetModuleFileNameW(HMODULE hModule,
                                               LPWSTR lpFilename, DWORD nSize)
 {
   DWORD res = 0UL;
@@ -1485,11 +1485,11 @@ DWORD WINAPI usvfs::hooks::GetModuleFileNameW(HMODULE hModule,
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetModuleFileNameA(HMODULE hModule,
+DWORD WINAPI usvfs::hook_GetModuleFileNameA(HMODULE hModule,
                                               LPSTR lpFilename, DWORD nSize)
 {
   std::unique_ptr<WCHAR[]> buffer(new WCHAR[nSize]);
-  DWORD res = usvfs::hooks::GetModuleFileNameW(hModule, buffer.get(), nSize);
+  DWORD res = usvfs::hook_GetModuleFileNameW(hModule, buffer.get(), nSize);
   if (res > 0) {
     WideCharToMultiByte(CP_ACP, 0, buffer.get(), -1,
                         lpFilename, nSize, nullptr, nullptr);
@@ -1501,7 +1501,7 @@ DWORD WINAPI usvfs::hooks::GetModuleFileNameA(HMODULE hModule,
   return res;
 }
 
-HMODULE WINAPI usvfs::hooks::GetModuleHandleW(LPCWSTR lpModuleName)
+HMODULE WINAPI usvfs::hook_GetModuleHandleW(LPCWSTR lpModuleName)
 {
   HMODULE res = nullptr;
 
@@ -1522,7 +1522,7 @@ HMODULE WINAPI usvfs::hooks::GetModuleHandleW(LPCWSTR lpModuleName)
   return res;
 }
 
-HMODULE WINAPI usvfs::hooks::GetModuleHandleA(LPCSTR lpModuleName)
+HMODULE WINAPI usvfs::hook_GetModuleHandleA(LPCSTR lpModuleName)
 {
   if (lpModuleName != nullptr) {
     return GetModuleHandleW(ush::string_cast<std::wstring>(lpModuleName).c_str());
@@ -1531,7 +1531,7 @@ HMODULE WINAPI usvfs::hooks::GetModuleHandleA(LPCSTR lpModuleName)
   }
 }
 
-BOOL WINAPI usvfs::hooks::GetModuleHandleExW(DWORD dwFlags,
+BOOL WINAPI usvfs::hook_GetModuleHandleExW(DWORD dwFlags,
                                              LPCWSTR lpModuleName,
                                              HMODULE *phModule)
 {
@@ -1554,19 +1554,19 @@ BOOL WINAPI usvfs::hooks::GetModuleHandleExW(DWORD dwFlags,
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::GetModuleHandleExA(DWORD dwFlags, LPCSTR lpModuleName,
+BOOL WINAPI usvfs::hook_GetModuleHandleExA(DWORD dwFlags, LPCSTR lpModuleName,
                                              HMODULE *phModule)
 {
   if (lpModuleName != nullptr) {
-    return usvfs::hooks::GetModuleHandleExW(
+    return GetModuleHandleExW(
         dwFlags, ush::string_cast<std::wstring>(lpModuleName).c_str(),
         phModule);
   } else {
-    return usvfs::hooks::GetModuleHandleExW(dwFlags, nullptr, phModule);
+    return GetModuleHandleExW(dwFlags, nullptr, phModule);
   }
 }
 
-BOOL WINAPI usvfs::hooks::GetFileVersionInfoW(LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData)
+BOOL WINAPI usvfs::hook_GetFileVersionInfoW(LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData)
 {
   BOOL res = FALSE;
 
@@ -1586,7 +1586,7 @@ BOOL WINAPI usvfs::hooks::GetFileVersionInfoW(LPCWSTR lptstrFilename, DWORD dwHa
   return res;
 }
 
-BOOL WINAPI usvfs::hooks::GetFileVersionInfoExW(DWORD dwFlags, LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData)
+BOOL WINAPI usvfs::hook_GetFileVersionInfoExW(DWORD dwFlags, LPCWSTR lptstrFilename, DWORD dwHandle, DWORD dwLen, LPVOID lpData)
 {
   BOOL res = FALSE;
 
@@ -1606,7 +1606,7 @@ BOOL WINAPI usvfs::hooks::GetFileVersionInfoExW(DWORD dwFlags, LPCWSTR lptstrFil
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetFileVersionInfoSizeW(LPCWSTR lptstrFilename, LPDWORD lpdwHandle)
+DWORD WINAPI usvfs::hook_GetFileVersionInfoSizeW(LPCWSTR lptstrFilename, LPDWORD lpdwHandle)
 {
   DWORD res = 0UL;
 
@@ -1626,7 +1626,7 @@ DWORD WINAPI usvfs::hooks::GetFileVersionInfoSizeW(LPCWSTR lptstrFilename, LPDWO
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetFileVersionInfoSizeExW(DWORD dwFlags, LPCWSTR lptstrFilename, LPDWORD lpdwHandle)
+DWORD WINAPI usvfs::hook_GetFileVersionInfoSizeExW(DWORD dwFlags, LPCWSTR lptstrFilename, LPDWORD lpdwHandle)
 {
   DWORD res = 0UL;
 
@@ -1646,12 +1646,12 @@ DWORD WINAPI usvfs::hooks::GetFileVersionInfoSizeExW(DWORD dwFlags, LPCWSTR lpts
   return res;
 }
 
-HANDLE WINAPI usvfs::hooks::FindFirstFileExA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS  fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags)
+HANDLE WINAPI usvfs::hook_FindFirstFileExA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS  fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags)
 {
 	LPWIN32_FIND_DATAA origData = static_cast<LPWIN32_FIND_DATAA>(lpFindFileData);
 
 	WIN32_FIND_DATAW tempData;
-	HANDLE tempHandle = usvfs::hooks::FindFirstFileExW(ush::string_cast<std::wstring>(lpFileName).c_str(), fInfoLevelId, &tempData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
+	HANDLE tempHandle = usvfs::hook_FindFirstFileExW(ush::string_cast<std::wstring>(lpFileName).c_str(), fInfoLevelId, &tempData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
 	origData->dwFileAttributes = tempData.dwFileAttributes;
 	origData->ftCreationTime = tempData.ftCreationTime;
 	origData->ftLastAccessTime = tempData.ftLastAccessTime;
@@ -1665,7 +1665,7 @@ HANDLE WINAPI usvfs::hooks::FindFirstFileExA(LPCSTR lpFileName, FINDEX_INFO_LEVE
 	return tempHandle;
 }
 
-HANDLE WINAPI usvfs::hooks::FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS  fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags)
+HANDLE WINAPI usvfs::hook_FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS  fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags)
 {
   HANDLE res = INVALID_HANDLE_VALUE;
 
@@ -1710,7 +1710,7 @@ HANDLE WINAPI usvfs::hooks::FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEV
   return res;
 }
 
-HRESULT WINAPI usvfs::hooks::CopyFile2(PCWSTR pwszExistingFileName, PCWSTR pwszNewFileName, COPYFILE2_EXTENDED_PARAMETERS *pExtendedParameters)
+HRESULT WINAPI usvfs::hook_CopyFile2(PCWSTR pwszExistingFileName, PCWSTR pwszNewFileName, COPYFILE2_EXTENDED_PARAMETERS *pExtendedParameters)
 {
   HRESULT res = E_FAIL;
 
@@ -1763,7 +1763,7 @@ HRESULT WINAPI usvfs::hooks::CopyFile2(PCWSTR pwszExistingFileName, PCWSTR pwszN
   return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionNamesA(LPSTR lpszReturnBuffer, DWORD nSize, LPCSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetPrivateProfileSectionNamesA(LPSTR lpszReturnBuffer, DWORD nSize, LPCSTR lpFileName)
 {
   DWORD res = 0;
 
@@ -1791,7 +1791,7 @@ DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionNamesA(LPSTR lpszReturnBuffer
     return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionNamesW(LPWSTR lpszReturnBuffer, DWORD nSize, LPCWSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetPrivateProfileSectionNamesW(LPWSTR lpszReturnBuffer, DWORD nSize, LPCWSTR lpFileName)
 {
   DWORD res = 0;
 
@@ -1819,7 +1819,7 @@ DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionNamesW(LPWSTR lpszReturnBuffe
     return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionA(LPCSTR lpAppName, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetPrivateProfileSectionA(LPCSTR lpAppName, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
 {
   DWORD res = 0;
 
@@ -1847,7 +1847,7 @@ DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionA(LPCSTR lpAppName, LPSTR lpR
     return res;
 }
 
-DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionW(LPCWSTR lpAppName, LPWSTR lpReturnedString, DWORD nSize, LPCWSTR lpFileName)
+DWORD WINAPI usvfs::hook_GetPrivateProfileSectionW(LPCWSTR lpAppName, LPWSTR lpReturnedString, DWORD nSize, LPCWSTR lpFileName)
 {
   DWORD res = 0;
 
@@ -1875,7 +1875,7 @@ DWORD WINAPI usvfs::hooks::GetPrivateProfileSectionW(LPCWSTR lpAppName, LPWSTR l
     return res;
 }
 
-BOOL WINAPI usvfs::hooks::WritePrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName, LPCSTR lpString, LPCSTR lpFileName)
+BOOL WINAPI usvfs::hook_WritePrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName, LPCSTR lpString, LPCSTR lpFileName)
 {
   return WritePrivateProfileStringW(
     ush::string_cast<std::wstring>(lpAppName).c_str(),
@@ -1885,7 +1885,7 @@ BOOL WINAPI usvfs::hooks::WritePrivateProfileStringA(LPCSTR lpAppName, LPCSTR lp
   );
 }
 
-BOOL WINAPI usvfs::hooks::WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR lpKeyName, LPCWSTR lpString, LPCWSTR lpFileName)
+BOOL WINAPI usvfs::hook_WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR lpKeyName, LPCWSTR lpString, LPCWSTR lpFileName)
 {
   BOOL res = false;
 
@@ -1942,7 +1942,7 @@ BOOL WINAPI usvfs::hooks::WritePrivateProfileStringW(LPCWSTR lpAppName, LPCWSTR 
   return res;
 }
 
-VOID WINAPI usvfs::hooks::ExitProcess(UINT exitCode)
+VOID WINAPI usvfs::hook_ExitProcess(UINT exitCode)
 {
   HOOK_START
 

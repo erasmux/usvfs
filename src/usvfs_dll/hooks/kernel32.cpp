@@ -1393,9 +1393,6 @@ DWORD WINAPI usvfs::hook_GetFullPathNameW(LPCWSTR lpFileName,
   res = ::GetFullPathNameW(temp.c_str(), nBufferLength, lpBuffer, lpFilePart);
   POST_REALCALL
 
-  // nothing to do here? Maybe if current directory is virtualised
-  HOOK_END
-
   if (false) {
     LOG_CALL()
         .PARAMWRAP(lpFileName)
@@ -1403,6 +1400,9 @@ DWORD WINAPI usvfs::hook_GetFullPathNameW(LPCWSTR lpFileName,
         .PARAM(res)
         .PARAM(callContext.lastError());
   }
+
+  // nothing to do here? Maybe if current directory is virtualised
+  HOOK_END
 
   return res;
 }

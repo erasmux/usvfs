@@ -133,6 +133,11 @@ public:
       if (callContext.active()) {
         fs::path lookupPath = canonize_path(absolute_path(inPath));
 
+        OutputDebugStringW(L"RerouteW::create lookupPath = [");
+        OutputDebugStringW(lookupPath.c_str());
+        OutputDebugStringW(L"]\n");
+        if (IsDebuggerPresent()) __debugbreak();
+
         const usvfs::RedirectionTreeContainer &table
             = inverse ? context->inverseTable() : context->redirectionTable();
         result.m_FileNode = table->findNode(lookupPath);
@@ -149,11 +154,18 @@ public:
           }
           if (result.m_Buffer.length() >= MAX_PATH && !ush::startswith(result.m_Buffer.c_str(), LR"(\\?\)"))
             result.m_Buffer = LR"(\\?\)" + result.m_Buffer;
+
           result.m_Rerouted = true;
         }
       }
       std::replace(result.m_Buffer.begin(), result.m_Buffer.end(), L'/', L'\\');
       result.m_FileName = result.m_Buffer.c_str();
+
+      OutputDebugStringW(L"RerouteW::create ");
+      OutputDebugStringW(result.m_Rerouted ? L"rerouted to [" : L"unchanged [");
+      OutputDebugStringW(result.m_FileName);
+      OutputDebugStringW(L"]\n");
+      if (IsDebuggerPresent()) __debugbreak();
     }
     return result;
   }
@@ -173,6 +185,11 @@ public:
       result.m_RealPath = lookupPath.c_str();
       lookupPath = canonize_path(lookupPath);
 
+      OutputDebugStringW(L"RerouteW::createNew lookupPath = [");
+      OutputDebugStringW(lookupPath.c_str());
+      OutputDebugStringW(createPath ? L"] (createPath)\n" : L"] (no createPath)\n");
+      if (IsDebuggerPresent()) __debugbreak();
+
       FindCreateTarget visitor;
       usvfs::RedirectionTree::VisitorFunction visitorWrapper = [&](
           const usvfs::RedirectionTree::NodePtrT &node) { visitor(node); };
@@ -187,6 +204,10 @@ public:
                               .wstring();
         if (createPath)
           try {
+            OutputDebugStringW(L"RerouteW::createNew creating [");
+            OutputDebugStringW(fs::path(result.m_Buffer).parent_path().wstring().c_str());
+            OutputDebugStringW(L"]\n");
+            if (IsDebuggerPresent()) __debugbreak();
             usvfs::FunctionGroupLock lock(usvfs::MutExHookGroup::ALL_GROUPS);
             winapi::ex::wide::createPath(
                 fs::path(result.m_Buffer).parent_path().wstring().c_str());
@@ -202,6 +223,11 @@ public:
 
     result.m_FileName = result.m_Buffer.c_str();
 
+    OutputDebugStringW(L"RerouteW::createNew ");
+    OutputDebugStringW(result.m_Rerouted ? L"rerouted to [" : L"unchanged [");
+    OutputDebugStringW(result.m_FileName);
+    OutputDebugStringW(L"]\n");
+    if (IsDebuggerPresent()) __debugbreak();
     return result;
   }
 

@@ -160,7 +160,7 @@ public:
 
   static RerouteW createNew(const usvfs::HookContext::ConstPtr &context,
                             const usvfs::HookCallContext &callContext,
-                            LPCWSTR inPath)
+                            LPCWSTR inPath, bool createPath = true)
   {
     UNUSED_VAR(callContext);
     RerouteW result;
@@ -185,15 +185,16 @@ public:
         result.m_Buffer = (fs::path(visitor.target->data().linkTarget.c_str())
                            / relativePath)
                               .wstring();
-        try {
-          usvfs::FunctionGroupLock lock(usvfs::MutExHookGroup::ALL_GROUPS);
-          winapi::ex::wide::createPath(
-              fs::path(result.m_Buffer).parent_path().wstring().c_str());
-        } catch (const std::exception &e) {
-          spdlog::get("hooks")
-              ->error("failed to create {}: {}",
-                      ush::string_cast<std::string>(result.m_Buffer), e.what());
-        }
+        if (createPath)
+          try {
+            usvfs::FunctionGroupLock lock(usvfs::MutExHookGroup::ALL_GROUPS);
+            winapi::ex::wide::createPath(
+                fs::path(result.m_Buffer).parent_path().wstring().c_str());
+          } catch (const std::exception &e) {
+            spdlog::get("hooks")
+                ->error("failed to create {}: {}",
+                        ush::string_cast<std::string>(result.m_Buffer), e.what());
+          }
 
         result.m_Rerouted = true;
       }
@@ -835,7 +836,7 @@ BOOL WINAPI usvfs::hooks::GetFileAttributesExW(
 
   HOOK_START_GROUP(MutExHookGroup::FILE_ATTRIBUTES)
 
-  RerouteW reroute = RerouteW::create(READ_CONTEXT(), callContext, lpFileName);
+  RerouteW reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
   PRE_REALCALL
   res = ::GetFileAttributesExW(reroute.fileName(), fInfoLevelId,
                                lpFileInformation);
@@ -865,7 +866,7 @@ DWORD WINAPI usvfs::hooks::GetFileAttributesW(LPCWSTR lpFileName)
 
   HOOK_START_GROUP(MutExHookGroup::FILE_ATTRIBUTES)
 
-  RerouteW reroute = RerouteW::create(READ_CONTEXT(), callContext, lpFileName);
+  RerouteW reroute = RerouteW::createNew(READ_CONTEXT(), callContext, lpFileName, false);
   PRE_REALCALL
   res = ::GetFileAttributesW(reroute.fileName());
   POST_REALCALL
@@ -1294,14 +1295,7 @@ DLLEXPORT BOOL WINAPI usvfs::hooks::CreateDirectoryW(
       = RerouteW::createNew(READ_CONTEXT(), callContext, lpPathName);
 
   PRE_REALCALL
-  if (reroute.wasRerouted()) {
-    // the intermediate directories may exist in the original directory but not
-    // in the rerouted location so do a recursive create
-    winapi::ex::wide::createPath(reroute.fileName(), lpSecurityAttributes);
-    res = TRUE;
-  } else {
-    res = ::CreateDirectoryW(lpPathName, lpSecurityAttributes);
-  }
+  res = ::CreateDirectoryW(reroute.fileName(), lpSecurityAttributes);
   POST_REALCALL
 
   if (reroute.wasRerouted()) {

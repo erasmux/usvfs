@@ -20,14 +20,14 @@ void print_usage(const char* myname) {
   fprintf(stderr, " -list <dir>         : lists the given directory and outputs the results.\n");
   fprintf(stderr, " -listcontents <dir> : lists the given directory, reading all files and outputs the results.\n");
   fprintf(stderr, " -read <file>        : reads the given file and outputs the results.\n");
-  fprintf(stderr, " -overwrite <file> <string> : overwrites the file at the given path with the given contents (creating directories if necessary).\n");
+  fprintf(stderr, " -overwrite <file> <string> : overwrites the file at the given path with the given contents (creating directories if in recursive mode).\n");
   fprintf(stderr, " -rewrite <file> <string> : rewrites the file at the given path with the given contents (fails if file doesn't exist; uses read/write access).\n");
   fprintf(stderr, " -debug              : shows a message box and wait for a debugger to connect.\n");
   fprintf(stderr, "\nsupported options:\n");
   fprintf(stderr, " -out <file>         : file to log output to (use \"-\" for the stdout; otherwise path to output should exist).\n");
   fprintf(stderr, " -cout <file>        : similar to -out but does not log PID and other info which may change between runs.\n");
-  fprintf(stderr, " -r                  : recursively list directories.\n");
-  fprintf(stderr, " -r-                 : don't recursively list directories.\n");
+  fprintf(stderr, " -r                  : recursively list/create directories.\n");
+  fprintf(stderr, " -r-                 : don't recursively list/create directories.\n");
   fprintf(stderr, " -basedir <dir>      : any paths under the basedir will outputed in a relative manner.\n");
   fprintf(stderr, " -w32api             : use regular Win32 API for file access (default).\n");
   fprintf(stderr, " -ntapi              : use lower level ntdll functions for file access.\n");
@@ -122,14 +122,15 @@ public:
   void overwrite(const char* path, const char* value)
   {
     auto real = m_api->real_path(path);
-    try {
-      m_api->create_path(real.parent_path());
-    }
-    catch (const std::exception& e) {
-      fmt::MemoryWriter msg;
-      msg << "Failed to create_path [" << m_api->relative_path(real.parent_path()).u8string() << "] : " << e.what();
-      throw std::runtime_error(msg.str());
-    }
+    if (m_recursive)
+      try {
+        m_api->create_path(real.parent_path());
+      }
+      catch (const std::exception& e) {
+        fmt::MemoryWriter msg;
+        msg << "Failed to create_path [" << m_api->relative_path(real.parent_path()).u8string() << "] : " << e.what();
+        throw std::runtime_error(msg.str());
+      }
     m_api->write_file(real, value, strlen(value), true);
   }
 

@@ -20,8 +20,8 @@ void print_usage(const char* myname) {
   fprintf(stderr, " -list <dir>         : lists the given directory and outputs the results.\n");
   fprintf(stderr, " -listcontents <dir> : lists the given directory, reading all files and outputs the results.\n");
   fprintf(stderr, " -read <file>        : reads the given file and outputs the results.\n");
-  fprintf(stderr, " -overwrite <file> <string> : overwrites the file at the given path with the given contents (creating directories if in recursive mode).\n");
-  fprintf(stderr, " -rewrite <file> <string> : rewrites the file at the given path with the given contents (fails if file doesn't exist; uses read/write access).\n");
+  fprintf(stderr, " -overwrite <file> <string> : overwrites the file at the given path with the given line (creating directories if in recursive mode).\n");
+  fprintf(stderr, " -rewrite <file> <string> : rewrites the file at the given path with the given line (fails if file doesn't exist; uses read/write access).\n");
   fprintf(stderr, " -debug              : shows a message box and wait for a debugger to connect.\n");
   fprintf(stderr, "\nsupported options:\n");
   fprintf(stderr, " -out <file>         : file to log output to (use \"-\" for the stdout; otherwise path to output should exist).\n");
@@ -131,12 +131,16 @@ public:
         msg << "Failed to create_path [" << m_api->relative_path(real.parent_path()).u8string() << "] : " << e.what();
         throw std::runtime_error(msg.str());
       }
-    m_api->write_file(real, value, strlen(value), true);
+    m_api->write_file(real, value, strlen(value), true, TestFileSystem::write_mode::overwrite);
   }
 
   void rewrite(const char* path, const char* value)
   {
-    m_api->write_file(m_api->real_path(path), value, strlen(value), false);
+    auto real = m_api->real_path(path);
+    // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
+    m_api->write_file(real, value, strlen(value), false, TestFileSystem::write_mode::manual_truncate, true);
+    char newline[] = "\n";
+    m_api->write_file(real, "\n", 1, false, TestFileSystem::write_mode::append);
   }
 
   void debug()

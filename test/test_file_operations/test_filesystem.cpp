@@ -53,6 +53,24 @@ TestFileSystem::path TestFileSystem::relative_path(path full_path)
   return result;
 }
 
+//static
+const char* TestFileSystem::write_operation_name(write_mode mode)
+{
+  switch (mode) {
+  case write_mode::manual_truncate:
+    return "Writing file (by open & truncate)";
+  case write_mode::truncate:
+    return "Truncating file";
+  case write_mode::create:
+    return "Creating file";
+  case write_mode::overwrite:
+    return "Overwriting file";
+  case write_mode::append:
+    return "Appending file";
+  }
+  return "Unknown write operation?!";
+}
+
 void TestFileSystem::print_operation(const char* operation, path target)
 {
   if (m_output)
@@ -74,9 +92,12 @@ static inline void print_op_with_result(FILE* output, const char* prefix, const 
 
 void TestFileSystem::print_result(const char* operation, uint32_t result, bool with_last_error, const char* opt_arg)
 {
-  DWORD last_error = with_last_error ? GetLastError() : 0;
-  std::string prefix = "# ("; prefix += id(); prefix += ")   ";
-  print_op_with_result(m_output, prefix.c_str(), operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+  if (m_output)
+  {
+    DWORD last_error = with_last_error ? GetLastError() : 0;
+    std::string prefix = "# ("; prefix += id(); prefix += ")   ";
+    print_op_with_result(m_output, prefix.c_str(), operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+  }
 }
 
 void TestFileSystem::print_error(const char* operation, uint32_t result, bool with_last_error, const char* opt_arg)
@@ -85,4 +106,23 @@ void TestFileSystem::print_error(const char* operation, uint32_t result, bool wi
   print_op_with_result(stderr, "ERROR: ", operation, result, with_last_error ? &last_error : nullptr, opt_arg);
   if (m_output && m_output != stdout)
     print_op_with_result(m_output, "ERROR: ", operation, result, with_last_error ? &last_error : nullptr, opt_arg);
+}
+
+void TestFileSystem::print_write_success(const void* data, std::size_t size, std::size_t written)
+{
+  if (m_output)
+  {
+    fprintf(m_output, "# Successfully written %u bytes ", static_cast<unsigned>(written));
+    // heuristics to print nicer one liners:
+    if (size == 1 && reinterpret_cast<const char*>(data)[0] == '\n')
+      fprintf(m_output, "<newline>");
+    else {
+      fprintf(m_output, "{");
+      if (size && reinterpret_cast<const char*>(data)[size - 1] == '\n')
+        --size;
+      fwrite(data, 1, size, m_output);
+      fprintf(m_output, "}");
+    }
+    fprintf(output(), "\n");
+  }
 }

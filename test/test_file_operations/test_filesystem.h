@@ -49,15 +49,18 @@ public:
 
   virtual void read_file(const path& file_path) = 0;
 
-  virtual void write_file(const path& file_path, const void* data, std::size_t size, bool overwrite) = 0;
+  enum class write_mode { manual_truncate, truncate, create, overwrite, append };
+  virtual void write_file(const path& file_path, const void* data, std::size_t size, bool add_new_line, write_mode mode, bool rw_access = false) = 0;
 
 protected:
   FILE* output() { return m_output; }
+  static const char* write_operation_name(write_mode mode);
 
 public: // mainly for derived class (but also used by helper classes like SafeHandle so public)
   void print_operation(const char* operation, path target);
   void print_result(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
   void print_error(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
+  void print_write_success(const void* data, std::size_t size, std::size_t written);
 
 private:
   FILE* m_output;

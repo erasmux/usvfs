@@ -21,7 +21,7 @@ public:
   bool valid() const { return m_handle != INVALID_HANDLE_VALUE; }
 
   ~SafeHandle() {
-    if (m_handle) {
+    if (m_handle != INVALID_HANDLE_VALUE) {
       BOOL res = CloseHandle(m_handle);
       if (m_tfs)
         m_tfs->print_result("CloseHandle", res, true);
@@ -53,7 +53,7 @@ public:
   bool valid() const { return m_handle != INVALID_HANDLE_VALUE; }
 
   ~SafeFindHandle() {
-    if (m_handle) {
+    if (m_handle != INVALID_HANDLE_VALUE) {
       BOOL res = FindClose(m_handle);
       if (m_tfs)
         m_tfs->print_result("CloseHandle", res, true);
@@ -154,7 +154,7 @@ void TestW32Api::read_file(const path& file_path)
     throw test::WinFuncFailed("CreateFile");
 
   uint32_t total = 0;
-  bool ends_with_newline = false;
+  bool ends_with_newline = true;
   bool pending_prefix = true;
   while (true) {
     char buf[4096];
@@ -188,24 +188,40 @@ void TestW32Api::read_file(const path& file_path)
       ends_with_newline = *(print_end - 1) == '\n';
       begin = print_end;
     }
+    if (output() && !ends_with_newline) {
+      fwrite("\n", 1, 1, output());
+      ends_with_newline = true;
+    }
   }
   if (output())
   {
-    if (!ends_with_newline)
-      fwrite("\n", 1, 1, output());
     fprintf(output(), "# Successfully read %u bytes.\n", total);
   }
 }
 
-void TestW32Api::write_file(const path& file_path, const void* data, std::size_t size, bool overwrite)
+void TestW32Api::write_file(const path& file_path, const void* data, std::size_t size, bool add_new_line, write_mode mode, bool rw_access)
 {
-  print_operation(overwrite ? "Overwritting file" : "Rewriting file", file_path);
+  print_operation(write_operation_name(mode), file_path);
 
   ACCESS_MASK access = GENERIC_WRITE;
-  if (overwrite) // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
+  DWORD disposition = OPEN_EXISTING;
+  switch (mode) {
+  case write_mode::truncate:
+    disposition = TRUNCATE_EXISTING;
+    break;
+  case write_mode::create:
+    disposition = CREATE_NEW;
+    break;
+  case write_mode::overwrite:
+    disposition = CREATE_ALWAYS;
+    break;
+  case write_mode::append:
+    disposition = OPEN_ALWAYS;
+    access = FILE_APPEND_DATA;
+    break;
+  }
+  if (rw_access)
     access |= GENERIC_READ;
-  DWORD disposition = overwrite ? CREATE_ALWAYS : OPEN_EXISTING; // FILE_SUPERSEDE for the overwrite case should be relatively easy for usvfs to handle
-                                                                 // as it leave no doubt we are replacing the old file (if such exists)
 
   SafeHandle file(this,
     CreateFile(file_path.c_str(), access, 0, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL));
@@ -213,26 +229,39 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
   if (!file.valid())
     throw test::WinFuncFailed("CreateFile");
 
-  if (!overwrite)
+  if (mode == write_mode::manual_truncate)
   {
-    // in case we didn't overwrite the file, we need to truncate it:
     BOOL res = SetEndOfFile(file);
     print_result("SetEndOfFile", res, true);
     if (!res)
       throw test::WinFuncFailed("SetEndOfFile");
   }
 
+  if (mode == write_mode::append)
+  {
+    DWORD res = SetFilePointer(file, 0, NULL, FILE_END);
+    print_result("SetFilePointer(FILE_END)", res, true);
+    if (res == INVALID_SET_FILE_POINTER)
+      throw test::WinFuncFailed("SetEndOfFile");
+  }
+
   // finally write the data:
+  size_t total = 0;
+
   DWORD written = 0;
   BOOL res = WriteFile(file, data, static_cast<DWORD>(size), &written, NULL);
-  print_result("WriteFile", res, true);
+  print_result("WriteFile", written, true);
   if (!res)
     throw test::WinFuncFailed("WriteFile");
+  total += written;
 
-  if (output())
-  {
-    fprintf(output(), "# Successfully written %u bytes {", static_cast<unsigned>(written));
-    fwrite(data, 1, size, output());
-    fprintf(output(), "}\n");
+  if (add_new_line) {
+    res = WriteFile(file, "\n", 1, &written, NULL);
+    print_result("WriteFile", written, true, "<new line>");
+    if (!res)
+      throw test::WinFuncFailed("WriteFile");
+    total += written;
   }
+
+  print_write_success(data, size, total);
 }

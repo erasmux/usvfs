@@ -15,7 +15,7 @@ public:
 
   void read_file(const path& file_path) override;
 
-  void write_file(const path& file_path, const void* data, std::size_t size, bool overwrite) override;
+  void write_file(const path& file_path, const void* data, std::size_t size, bool add_new_line, write_mode mode, bool rw_access = false) override;
 
   const char* id() override;
 

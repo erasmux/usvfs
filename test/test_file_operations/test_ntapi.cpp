@@ -211,7 +211,7 @@ void TestNtApi::read_file(const path& file_path)
     throw test::FuncFailed("NtOpenFile status", iosb.Status);
 
   uint32_t total = 0;
-  bool ends_with_newline = false;
+  bool ends_with_newline = true;
   bool pending_prefix = true;
   while (true) {
     char buf[4096];
@@ -245,18 +245,20 @@ void TestNtApi::read_file(const path& file_path)
       ends_with_newline = *(print_end - 1) == '\n';
       begin = print_end;
     }
+    if (output() && !ends_with_newline) {
+      fwrite("\n", 1, 1, output());
+      ends_with_newline = true;
+    }
   }
   if (output())
   {
-    if (!ends_with_newline)
-      fwrite("\n", 1, 1, output());
     fprintf(output(), "# Successfully read %u bytes.\n", total);
   }
 }
 
-void TestNtApi::write_file(const path& file_path, const void* data, std::size_t size, bool overwrite)
+void TestNtApi::write_file(const path& file_path, const void* data, std::size_t size, bool add_new_line, write_mode mode, bool rw_access)
 {
-  print_operation(overwrite ? "Overwritting file" : "Rewriting file", file_path);
+  print_operation(write_operation_name(mode), file_path);
 
   UNICODE_STRING unicode_path;
   RtlInitUnicodeString(&unicode_path, file_path.c_str());
@@ -265,10 +267,24 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
   ACCESS_MASK access = GENERIC_WRITE | SYNCHRONIZE;
-  if (overwrite) // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
+  ULONG disposition = FILE_OPEN;
+  switch (mode) {
+  case write_mode::truncate:
+    disposition = FILE_OVERWRITE;
+    break;
+  case write_mode::create:
+    disposition = FILE_CREATE;
+    break;
+  case write_mode::overwrite:
+    disposition = FILE_SUPERSEDE;
+    break;
+  case write_mode::append:
+    disposition = FILE_OPEN_IF;
+    access = FILE_APPEND_DATA | SYNCHRONIZE;
+    break;
+  }
+  if (rw_access)
     access |= GENERIC_READ;
-  ULONG disposition = overwrite ? FILE_SUPERSEDE : FILE_OPEN; // FILE_SUPERSEDE for the overwrite case should be relatively easy for usvfs to handle
-                                                              // as it leave no doubt we are replacing the old file (if such exists)
 
   SafeHandle file(this);
   IO_STATUS_BLOCK iosb;
@@ -283,13 +299,12 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   if (!NT_SUCCESS(iosb.Status))
     throw test::FuncFailed("NtCreateFile status", iosb.Status);
 
-  if (!overwrite)
+  if (mode == write_mode::manual_truncate)
   {
-    // in case we didn't overwrite the file, we need to truncate it:
     FILE_END_OF_FILE_INFORMATION eofinfo{ 0 };
     status =
       NtSetInformationFile(file, &iosb, &eofinfo, sizeof(eofinfo), MyFileEndOfFileInformation);
-    print_result("NtSetInformationFile", status);
+    print_result("NtSetInformationFile", status, false, "EOF");
 
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtSetInformationFile", status);
@@ -298,19 +313,28 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   }
 
   // finally write the data:
+  size_t total = 0;
+
   status =
     NtWriteFile(file, NULL, NULL, NULL, &iosb, const_cast<void*>(data), static_cast<ULONG>(size), NULL, NULL);
   print_result("NtWriteFile", status);
-
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtWriteFile", status);
   if (!NT_SUCCESS(iosb.Status))
     throw test::FuncFailed("NtWriteFile status", iosb.Status);
+  total += iosb.Information;
 
-  if (output())
+  if (add_new_line)
   {
-    fprintf(output(), "# Successfully written %u bytes {", static_cast<unsigned>(iosb.Information));
-    fwrite(data, 1, size, output());
-    fprintf(output(), "}\n");
+    status =
+      NtWriteFile(file, NULL, NULL, NULL, &iosb, "\n", 1, NULL, NULL);
+    print_result("NtWriteFile", status);
+    if (!NT_SUCCESS(status))
+      throw test::FuncFailed("NtWriteFile", status);
+    if (!NT_SUCCESS(iosb.Status))
+      throw test::FuncFailed("NtWriteFile status", iosb.Status);
+    total += iosb.Information;
   }
+
+  print_write_success(data, size, total);
 }

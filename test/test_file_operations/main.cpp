@@ -25,7 +25,9 @@ void print_usage(const char* myname) {
   fprintf(stderr, " -debug              : shows a message box and wait for a debugger to connect.\n");
   fprintf(stderr, "\nsupported options:\n");
   fprintf(stderr, " -out <file>         : file to log output to (use \"-\" for the stdout; otherwise path to output should exist).\n");
+  fprintf(stderr, " -out+ <file>        : similar to -out but appends the file instead of overwriting it.\n");
   fprintf(stderr, " -cout <file>        : similar to -out but does not log PID and other info which may change between runs.\n");
+  fprintf(stderr, " -cout+ <file>       : similar to -cout but appends the file instead of overwriting it.\n");
   fprintf(stderr, " -r                  : recursively list/create directories.\n");
   fprintf(stderr, " -r-                 : don't recursively list/create directories.\n");
   fprintf(stderr, " -basedir <dir>      : any paths under the basedir will outputed in a relative manner.\n");
@@ -61,23 +63,26 @@ public:
 
   // Options:
 
-  void set_output(const char* output_file, bool clean, const char* cmdline)
+  void set_output(const char* output_file, bool clean, bool append, const char* cmdline)
   {
     if (m_output && m_output != stdout) {
-      fprintf(m_output, "# Output log closed.\n", output_file);
+      fprintf(m_output, "#< Output log closed.\n", output_file);
       fclose(m_output);
     }
 
     m_cleanoutput = clean;
     m_output = nullptr;
-    errno_t err = fopen_s(&m_output, output_file, "wb");
+    errno_t err = fopen_s(&m_output, output_file, append ? "ab" : "wb");
     if (err || !m_output)
       throw test::WinFuncFailed("fopen_s", output_file, err);
     else {
+      if (append && !fseek(m_output, 0, SEEK_END) && ftell(m_output))
+        fprintf(m_output, "\n");
+
       if (m_cleanoutput)
-        fprintf(m_output, "# Output log openned for: %s\n", cmdline);
+        fprintf(m_output, "#> Output log openned for: %s\n", cmdline);
       else
-        fprintf(m_output, "# Output log openned for (pid %d): %s\n", GetCurrentProcessId(), cmdline);
+        fprintf(m_output, "#> Output log openned for (pid %d): %s\n", GetCurrentProcessId(), cmdline);
       w32api.set_output(m_output);
       ntapi.set_output(m_output);
     }
@@ -226,7 +231,7 @@ int main(int argc, char *argv[])
   TestFileSystem::path exe_path = argv[0];
   std::string exename = exe_path.filename().u8string();
   std::string cmdline = exename + " " + UntouchedCommandLineArguments();
-  fprintf(stdout, "# process %d started with commandline: %s\n", GetCurrentProcessId(), cmdline.c_str());
+  fprintf(stdout, "#> process %d started with commandline: %s\n", GetCurrentProcessId(), cmdline.c_str());
 
   for (int ai = 1; ai < argc; ++ai)
   {
@@ -236,10 +241,13 @@ int main(int argc, char *argv[])
 
       // options:
       if (strcmp(argv[ai], "-out") == 0 && verify_args_exist("-out", 1, ai, argc)
-        || strcmp(argv[ai], "-cout") == 0 && verify_args_exist("-cout", 1, ai, argc) )
+        || strcmp(argv[ai], "-out+") == 0 && verify_args_exist("-out+", 1, ai, argc)
+        || strcmp(argv[ai], "-cout") == 0 && verify_args_exist("-cout", 1, ai, argc)
+        || strcmp(argv[ai], "-cout+") == 0 && verify_args_exist("-cout+", 1, ai, argc))
       {
-        executer.set_output(argv[ai + 1], argv[ai][1]=='c', cmdline.c_str());
-        ++ai;
+        bool clean = argv[ai][1] == 'c';
+        bool append = argv[ai][clean?5:4] == '+';
+        executer.set_output(argv[++ai], clean, append, cmdline.c_str());
       }
       else if (strcmp(argv[ai], "-r") == 0)
         executer.set_recursive(true);
@@ -312,10 +320,10 @@ int main(int argc, char *argv[])
 
   if (executer.file_output())
     if (executer.cleanoutput())
-      fprintf(executer.output(), "%s ended properly.\n", exename.c_str());
+      fprintf(executer.output(), "#< %s ended properly.\n", exename.c_str());
     else
-      fprintf(executer.output(), "%s ended properly in process %d.\n", exename.c_str(), GetCurrentProcessId());
-  fprintf(stdout, "%s ended properly in process %d.\n", exename.c_str(), GetCurrentProcessId());
+      fprintf(executer.output(), "#< %s ended properly in process %d.\n", exename.c_str(), GetCurrentProcessId());
+  fprintf(stdout, "#< %s ended properly in process %d.\n", exename.c_str(), GetCurrentProcessId());
 
   return 0;
 }

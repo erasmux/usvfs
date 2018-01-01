@@ -642,15 +642,15 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
     }
   }
 
+  bool createRequested =
+    dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS;
   bool create = false;
 
   RerouteW reroute;
   {
     auto context = READ_CONTEXT();
     reroute      = RerouteW::create(context, callContext, lpFileName);
-    if (!reroute.wasRerouted()
-      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS)
-      && pathDirectlyAvailable(lpFileName))
+    if (!reroute.wasRerouted() && createRequested && pathDirectlyAvailable(lpFileName))
     {
       reroute = RerouteW::createNew(context, callContext, lpFileName, true, lpSecurityAttributes);
       create  = reroute.wasRerouted();
@@ -662,6 +662,16 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
                       lpSecurityAttributes, dwCreationDisposition,
                       dwFlagsAndAttributes, hTemplateFile);
   POST_REALCALL
+
+  DWORD originalError = callContext.lastError();
+  DWORD fixedError = originalError;
+  // if ERROR_PATH_NOT_FOUND was returned it means that parent folder does not exist
+  // if the parent folder exists but is virtualized we might get ERROR_PATH_NOT_FOUND
+  // which should be a ERROR_FILE_NOT_FOUND:
+  if (res == INVALID_HANDLE_VALUE && fixedError == ERROR_PATH_NOT_FOUND && !createRequested && pathDirectlyAvailable(lpFileName))
+    fixedError = ERROR_FILE_NOT_FOUND;
+  if (fixedError != originalError)
+    callContext.updateLastError(fixedError);
 
   if (create && (res != INVALID_HANDLE_VALUE)) {
     spdlog::get("hooks")
@@ -686,7 +696,8 @@ HANDLE WINAPI usvfs::hook_CreateFileW(
       .PARAMHEX(dwCreationDisposition)
       .PARAMHEX(dwFlagsAndAttributes)
       .PARAMHEX(res)
-      .PARAMHEX(callContext.lastError());
+      .PARAMHEX(originalError)
+      .PARAMHEX(fixedError);
   }
   HOOK_END
 
@@ -749,15 +760,15 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
     }
   }
 
+  bool createRequested =
+    dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS;
   bool create = false;
 
   RerouteW reroute;
   {
     auto context = READ_CONTEXT();
     reroute = RerouteW::create(context, callContext, lpFileName);
-    if (!reroute.wasRerouted()
-      && (dwCreationDisposition == CREATE_ALWAYS || dwCreationDisposition == CREATE_NEW || dwCreationDisposition == OPEN_ALWAYS)
-      && pathDirectlyAvailable(lpFileName))
+    if (!reroute.wasRerouted() && createRequested && pathDirectlyAvailable(lpFileName))
     {
       reroute = RerouteW::createNew(context, callContext, lpFileName, true, pCreateExParams ? pCreateExParams->lpSecurityAttributes : nullptr);
       create = reroute.wasRerouted();
@@ -767,6 +778,16 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
   PRE_REALCALL
   res = dCreateFile2(reroute.fileName(), dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
   POST_REALCALL
+
+  DWORD originalError = callContext.lastError();
+  DWORD fixedError = originalError;
+  // if ERROR_PATH_NOT_FOUND was returned it means that parent folder does not exist
+  // if the parent folder exists but is virtualized we might get ERROR_PATH_NOT_FOUND
+  // which should be a ERROR_FILE_NOT_FOUND:
+  if (res == INVALID_HANDLE_VALUE && fixedError == ERROR_PATH_NOT_FOUND && !createRequested && pathDirectlyAvailable(lpFileName))
+    fixedError = ERROR_FILE_NOT_FOUND;
+  if (fixedError != originalError)
+    callContext.updateLastError(fixedError);
 
   if (create && (res != INVALID_HANDLE_VALUE)) {
     spdlog::get("hooks")
@@ -800,7 +821,8 @@ HANDLE WINAPI usvfs::hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess,
       .PARAMHEX(dwFileAttributes)
       .PARAMHEX(dwFileFlags)
       .PARAMHEX(res)
-      .PARAMHEX(callContext.lastError());
+      .PARAMHEX(originalError)
+      .PARAMHEX(fixedError);
   }
   HOOK_END
 

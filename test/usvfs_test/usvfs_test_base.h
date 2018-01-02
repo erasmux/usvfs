@@ -9,12 +9,11 @@ public:
   using path = test::path;
 
   // fills any values not set (or set to an empty value) to their default value
-  void fill_defaults();
+  void fill_defaults(const path& test_name, const std::wstring& scenario);
 
-  void set_ops_platform(const wchar_t* platform);
-  void set_ops32() { if (opsexe.empty()) set_ops_platform(L"x86"); }
-  void set_ops64() { if (opsexe.empty()) set_ops_platform(L"x64"); }
-  void add_ops_options(const std::wstring& options) { if (!ops_options.empty()) ops_options += L" "; ops_options += options; }
+  void set_ops32(); // sets opsexe iff opsexe is empty
+  void set_ops64(); // sets opsexe iff opsexe is empty
+  void add_ops_options(const std::wstring& options);
 
   path opsexe;
   path fixture;
@@ -24,6 +23,7 @@ public:
   path source;
   path output;
   std::wstring ops_options;
+  bool temp_cleanup = false;
   bool force_temp_cleanup = false;
 };
 
@@ -55,6 +55,10 @@ public:
   virtual void verify_source_non_existance(path rel_path);
 
 private:
+  bool cleanup_temp();
+  bool copy_fixture();
+  bool postmortem_check();
+
   void run_ops(std::wstring args);
   void verify_file(path file, const wchar_t* contents);
   void verify_non_existance(path apath);

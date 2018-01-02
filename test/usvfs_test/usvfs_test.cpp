@@ -5,23 +5,26 @@
 #include <stringcast.h>
 #include "usvfs_basic_test.h"
 
-void print_usage(const std::wstring& myname) {
+void print_usage(const std::wstring& test_name) {
   using namespace std;
-  wcerr << "usage: " << myname << " [<options>] <scenario>" << endl;
+  wcerr << "usage: " << test_name << " [<options>] <scenario>" << endl;
   wcerr << "available options:" << endl;
   wcerr << " -ops32          : force 32bit file opertations process (default is same bitness)." << endl;
   wcerr << " -ops64          : force 64bit file opertations process (default is same bitness)." << endl;
   wcerr << " -opsexe <file>  : full path to file operations executable (overrides -ops32/64)." << endl;
   wcerr << " -opsarg <arg>   : adds argument to the start of all file operations." << endl;
-  wcerr << " -fixture <dir>  : fixture dir (default is test\\fixtures\\usvfs_test\\<scenario>)." << endl;
+  wcerr << " -fixture <dir>  : fixture dir (default is test\\fixtures\\" << test_name << "\\<scenario>)." << endl;
   wcerr << " -mapping <file> : mapping file (default is <fixture dir>\\vfs_mappings.txt)." << endl;
-  wcerr << " -temp <dir>     : temp dir (default is test\\temp\\" << myname << "\\<scenario>)." << endl;
+  wcerr << " -temp <dir>     : temp dir (default is test\\temp\\" << test_name << "\\<scenario>)." << endl;
   wcerr << " -mount <dir>    : mount dir (default is <temp dir>\\mount)." << endl;
   wcerr << " -source <dir>   : source dir (default is <temp dir>\\source)." << endl;
   wcerr << " -out <file>     : output file (default is <temp dir>\\<scenario>.txt)." << endl;
-  wcerr << " -recursivelyremovetempdirwithoutconfirmation : by default, if the temp dir exists," << endl
-        << "                   a heuristic is used to verify the temp dir \"looks\" like a temp" << endl
-        << "                   before it is recursively decimated." << endl;
+  wcerr << " -forcetemprecursivedelete : decimate temp dir even if doesn't look like a temp dir." << endl;
+  wcerr << endl;
+  wcerr << "note: mount and source dirs should not exist or be empty directories. if either of them" << endl;
+  wcerr << "is not given, the temp dir is first recusrively deleted. to protect against accidents a" << endl;
+  wcerr << "heuristic is used to verify the temp dir only has entires which this test creates." << endl;
+  wcerr << "-forcetemprecursivedelete can be used to circumvent this heuristic." << endl;
 }
 
 usvfs_test_base* find_scenario(const std::string& scenario, const usvfs_test_options& options)
@@ -82,48 +85,48 @@ int wmain(int argc, wchar_t *argv[])
     else if (wcscmp(argv[ai], L"-opsexe")) {
       if (!verify_args_exist(L"-opsexe", 1, ai, argc))
         return 1;
-      options.opsexe = argv[ai];
+      options.opsexe = argv[++ai];
       if (!verify_file(options.opsexe))
         return 1;
     }
     else if (wcscmp(argv[ai], L"-opsarg")) {
       if (!verify_args_exist(L"-opsarg", 1, ai, argc))
         return 1;
-      options.add_ops_options(argv[ai]);
+      options.add_ops_options(argv[++ai]);
     }
     else if (wcscmp(argv[ai], L"-fixture")) {
       if (!verify_args_exist(L"-fixture", 1, ai, argc))
         return 1;
-      options.fixture = argv[ai];
+      options.fixture = argv[++ai];
       if (!verify_dir(options.fixture))
         return 1;
     }
     else if (wcscmp(argv[ai], L"-mapping")) {
       if (!verify_args_exist(L"-mapping", 1, ai, argc))
         return 1;
-      options.mapping = argv[ai];
+      options.mapping = argv[++ai];
       if (!verify_file(options.mapping))
         return 1;
     }
     else if (wcscmp(argv[ai], L"-temp")) {
       if (!verify_args_exist(L"-temp", 1, ai, argc))
         return 1;
-      options.mount = argv[ai];
+      options.mount = argv[++ai];
     }
     else if (wcscmp(argv[ai], L"-mount")) {
       if (!verify_args_exist(L"-mount", 1, ai, argc))
         return 1;
-      options.mount = argv[ai];
+      options.mount = argv[++ai];
     }
     else if (wcscmp(argv[ai], L"-source")) {
       if (!verify_args_exist(L"-source", 1, ai, argc))
         return 1;
-      options.source = argv[ai];
+      options.source = argv[++ai];
     }
     else if (wcscmp(argv[ai], L"-out")) {
       if (!verify_args_exist(L"-out", 1, ai, argc))
         return 1;
-      options.output = argv[ai];
+      options.output = argv[++ai];
     }
     if (wcscmp(argv[ai], L"-recursivelyremovetempdirwithoutconfirmation"))
       options.force_temp_cleanup = true;
@@ -143,10 +146,14 @@ int wmain(int argc, wchar_t *argv[])
       scenario = argv[ai];
   }
 
+  path test_name = path(argv[0]).stem();
+
   if (scenario.empty()) {
-    print_usage(path(argv[0]).stem());
+    print_usage(test_name);
     return 1;
   }
+
+  options.fill_defaults(test_name, scenario);
 
   unique_ptr<usvfs_test_base> test{
     find_scenario(usvfs::shared::string_cast<std::string>(scenario, usvfs::shared::CodePage::UTF8), options) };

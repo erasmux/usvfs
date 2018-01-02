@@ -30,7 +30,7 @@ void print_usage(const char* myname) {
   fprintf(stderr, " -cout+ <file>       : similar to -cout but appends the file instead of overwriting it.\n");
   fprintf(stderr, " -r                  : recursively list/create directories.\n");
   fprintf(stderr, " -r-                 : don't recursively list/create directories.\n");
-  fprintf(stderr, " -basedir <dir>      : any paths under the basedir will outputed in a relative manner.\n");
+  fprintf(stderr, " -basedir <dir>      : any paths under the basedir will outputed in a relative manner (default is current directory).\n");
   fprintf(stderr, " -w32api             : use regular Win32 API for file access (default).\n");
   fprintf(stderr, " -ntapi              : use lower level ntdll functions for file access.\n");
 }

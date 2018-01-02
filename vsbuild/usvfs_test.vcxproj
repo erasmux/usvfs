@@ -127,7 +127,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\test\usvfs_test\main.cpp" />
+    <ClCompile Include="..\test\usvfs_test\usvfs_test.cpp" />
+    <ClCompile Include="..\test\usvfs_test\usvfs_basic_test.cpp" />
+    <ClCompile Include="..\test\usvfs_test\usvfs_test_base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="shared.vcxproj">
@@ -139,6 +141,10 @@
     <ProjectReference Include="usvfs_dll.vcxproj">
       <Project>{562b0058-4701-4284-8b40-d87648a3f64c}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\test\usvfs_test\usvfs_basic_test.h" />
+    <ClInclude Include="..\test\usvfs_test\usvfs_test_base.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

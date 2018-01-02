@@ -64,25 +64,25 @@ namespace test {
     return msg.str();
   }
 
-  path path_of_test_bin(const path& relative_) {
+  path path_of_test_bin(const path& relative) {
     path base(winapi::wide::getModuleFileName(nullptr));
-    return base.parent_path() / relative_;
+    return base.parent_path() / relative;
   }
 
-  path path_of_test_temp(const path& relative_) {
-    return path_of_test_bin().parent_path() / "temp" / relative_;
+  path path_of_test_temp(const path& relative) {
+    return path_of_test_bin().parent_path() / "temp" / relative;
   }
 
-  path path_of_usvfs_lib(const path& relative_) {
-    return path_of_test_bin().parent_path().parent_path() / "lib" / relative_;
+  path path_of_usvfs_lib(const path& relative) {
+    return path_of_test_bin().parent_path().parent_path() / "lib" / relative;
   }
 
-  std::string platform_dependant_executable(const char* name_, const char* ext_, const char* platform_)
+  std::string platform_dependant_executable(const char* name, const char* ext, const char* platform)
   {
-    std::string res = name_;
+    std::string res = name;
     res += "_";
-    if (platform_)
-      res += platform_;
+    if (platform)
+      res += platform;
     else
 #if _WIN64
       res += "x64";
@@ -90,11 +90,11 @@ namespace test {
       res += "x86";
 #endif
     res += ".";
-    res += ext_;
+    res += ext;
     return res;
   }
 
-  void delete_directory_tree(const path& dpath)
+  void recursive_delete_files(const path& dpath)
   {
     bool isDir = false;
     if (!winapi::ex::wide::fileExists(dpath.c_str(), &isDir))
@@ -117,7 +117,7 @@ namespace test {
             throw WinFuncFailed("DeleteFile", (dpath / f.fileName).u8string().c_str());
       }
       for (auto r : recurse)
-        delete_directory_tree(dpath / r);
+        recursive_delete_files(dpath / r);
       if (!RemoveDirectoryW(dpath.c_str()))
         throw WinFuncFailed("RemoveDirectory", dpath.u8string().c_str());
     }
@@ -125,51 +125,51 @@ namespace test {
       throw FuncFailed("delete_directory_tree", dpath.u8string().c_str());
   }
 
-  void recursive_copy_files(const path& srcPath, const path& destPath, bool overwrite)
+  void recursive_copy_files(const path& src_path, const path& dest_path, bool overwrite)
   {
     bool srcIsDir = false, destIsDir = false;
-    if (!winapi::ex::wide::fileExists(srcPath.c_str(), &srcIsDir))
-      throw FuncFailed("recursive_copy", ("source doesn't exist: " + srcPath.u8string()).c_str());
-    if (!winapi::ex::wide::fileExists(destPath.c_str(), &destIsDir) && srcIsDir)
+    if (!winapi::ex::wide::fileExists(src_path.c_str(), &srcIsDir))
+      throw FuncFailed("recursive_copy", ("source doesn't exist: " + src_path.u8string()).c_str());
+    if (!winapi::ex::wide::fileExists(dest_path.c_str(), &destIsDir) && srcIsDir)
     {
-      winapi::ex::wide::createPath(destPath.c_str());
+      winapi::ex::wide::createPath(dest_path.c_str());
       destIsDir = true;
     }
 
     if (!srcIsDir)
       if (!destIsDir)
       {
-        if (!CopyFileW(srcPath.c_str(), destPath.c_str(), overwrite))
-          throw WinFuncFailed("CopyFile", (srcPath.u8string() + " => " + destPath.u8string()).c_str());
+        if (!CopyFileW(src_path.c_str(), dest_path.c_str(), overwrite))
+          throw WinFuncFailed("CopyFile", (src_path.u8string() + " => " + dest_path.u8string()).c_str());
         return;
       }
       else
         throw FuncFailed("recursive_copy",
-          ("source is a file but destination is a directory: " + srcPath.u8string() + ", " + destPath.u8string()).c_str());
+          ("source is a file but destination is a directory: " + src_path.u8string() + ", " + dest_path.u8string()).c_str());
 
     if (!destIsDir)
       throw FuncFailed("recursive_copy",
-        ("source is a directory but destination is a file: " + srcPath.u8string() + ", " + destPath.u8string()).c_str());
+        ("source is a directory but destination is a file: " + src_path.u8string() + ", " + dest_path.u8string()).c_str());
 
     // source and destination are both directories:
     std::vector<std::wstring> recurse;
-    for (auto f : winapi::ex::wide::quickFindFiles(srcPath.c_str(), L"*"))
+    for (auto f : winapi::ex::wide::quickFindFiles(src_path.c_str(), L"*"))
     {
       if (f.fileName == L"." || f.fileName == L"..")
         continue;
       if (f.attributes & FILE_ATTRIBUTE_DIRECTORY)
         recurse.push_back(f.fileName);
       else
-        if (!CopyFileW((srcPath / f.fileName).c_str(), (destPath / f.fileName).c_str(), overwrite))
+        if (!CopyFileW((src_path / f.fileName).c_str(), (dest_path / f.fileName).c_str(), overwrite))
           throw WinFuncFailed("CopyFile",
-            ((srcPath / f.fileName).u8string() + " => " + (destPath / f.fileName).u8string()).c_str());
+            ((src_path / f.fileName).u8string() + " => " + (dest_path / f.fileName).u8string()).c_str());
     }
     for (auto r : recurse)
-      recursive_copy(srcPath / r, destPath / r, overwrite);
+      recursive_copy_files(src_path / r, dest_path / r, overwrite);
   }
 
-  ScopedLoadLibrary::ScopedLoadLibrary(const wchar_t* dllPath)
-    : m_mod(LoadLibrary(dllPath))
+  ScopedLoadLibrary::ScopedLoadLibrary(const wchar_t* dll_path)
+    : m_mod(LoadLibrary(dll_path))
   {
   }
   ScopedLoadLibrary::~ScopedLoadLibrary()

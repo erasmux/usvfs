@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <filesystem>
+#include <cstdio>
 #include "windows_sane.h"
 
 namespace test {
@@ -28,6 +29,8 @@ namespace test {
   class WinFuncFailed : public std::runtime_error
   {
   public:
+    // TODO: The whole WinFuncFailed interface is flawed!!!!
+
     WinFuncFailed(const char* func)
       : std::runtime_error(msg(func)) {}
     WinFuncFailed(const char* func, unsigned long res)
@@ -44,6 +47,18 @@ namespace test {
     std::string msg(const char* func, const char* arg1, unsigned long res);
   };
 
+  class ScopedFILE {
+  public:
+    ScopedFILE(FILE* f = nullptr) : m_f(f) {}
+    ~ScopedFILE() { if (m_f) fclose(m_f); }
+
+    operator bool() const { return m_f; }
+    operator FILE*() const { return m_f; }
+    operator FILE**() { return &m_f; }
+  private:
+    FILE* m_f;
+  };
+
   using std::experimental::filesystem::path;
 
   // path functions assume they are called by a test executable
@@ -51,9 +66,20 @@ namespace test {
 
   path path_of_test_bin(const path& relative = path());
   path path_of_test_temp(const path& relative = path());
+  path path_of_test_fixtures(const path& relative = path());
   path path_of_usvfs_lib(const path& relative = path());
 
   std::string platform_dependant_executable(const char* name, const char* ext = "exe", const char* platform = nullptr);
+
+  std::vector<char> read_small_file(const path& file, bool binary = true);
+
+  // true iff the the contents of the two files is exactly the same
+  bool compare_files(const path& file1, const path& file2, bool binary = true);
+
+  // return true iff the given path is an empty (optionally true also if path doesn't exist)
+  bool is_empty_folder(const path& dpath, bool or_doesnt_exist = false);
+
+  void delete_file(const path& file);
 
   // Recursively deletes the given path and all the files and directories under it
   // Use with care!!!

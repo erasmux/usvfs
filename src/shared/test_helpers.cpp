@@ -73,6 +73,10 @@ namespace test {
     return path_of_test_bin().parent_path() / "temp" / relative;
   }
 
+  path path_of_test_fixtures(const path& relative) {
+    return path_of_test_bin().parent_path() / "fixtures" / relative;
+  }
+
   path path_of_usvfs_lib(const path& relative) {
     return path_of_test_bin().parent_path().parent_path() / "lib" / relative;
   }
@@ -94,15 +98,64 @@ namespace test {
     return res;
   }
 
+  std::vector<char> read_small_file(const path& file, bool binary)
+  {
+    using namespace std;
+
+    ScopedFILE f;
+    errno_t err = _wfopen_s(f, file.c_str(), binary ? L"rb" : L"rt");
+    if (err || !f)
+      throw test::WinFuncFailed("_wfopen_s", file.u8string().c_str(), err);
+
+    if (fseek(f, 0, SEEK_END))
+      throw test::WinFuncFailed("fseek", (unsigned long) 0);
+
+    long size = ftell(f);
+    if (size < 0)
+      throw test::WinFuncFailed("ftell", (unsigned long) size);
+    if (size > 0x10000000) // sanity check limit to 256M
+      throw test::FuncFailed("read_small_file", "file size too large", (unsigned long) size);
+
+    if (fseek(f, 0, SEEK_SET))
+      throw test::WinFuncFailed("fseek", (unsigned long) 0);
+
+    std::vector<char> content(static_cast<size_t>(size));
+    content.resize(fread(content.data(), sizeof(char), content.size(), f));
+
+    return std::move(content);
+  }
+
+  bool compare_files(const path& file1, const path& file2, bool binary)
+  {
+    // TODO: if this is ever used for big file should read files in chunks
+    return read_small_file(file1, binary) == read_small_file(file2, binary);
+  }
+
+  bool is_empty_folder(const path& dpath, bool or_doesnt_exist)
+  {
+    bool isDir = false;
+    if (!winapi::ex::wide::fileExists(dpath.c_str(), &isDir))
+      return or_doesnt_exist;
+
+    return isDir && winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*").empty();
+  }
+
+  void delete_file(const path& file)
+  {
+    if (!DeleteFileW(file.c_str())) {
+      auto err = GetLastError();
+      if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
+        throw WinFuncFailed("DeleteFile", file.u8string().c_str());
+    }
+  }
+
   void recursive_delete_files(const path& dpath)
   {
     bool isDir = false;
     if (!winapi::ex::wide::fileExists(dpath.c_str(), &isDir))
       return;
-    if (!isDir) {
-      if (!DeleteFileW(dpath.c_str()))
-        throw WinFuncFailed("DeleteFile", dpath.u8string().c_str());
-    }
+    if (!isDir)
+      delete_file(dpath);
     else {
       // dpath exists and its a directory:
       std::vector<std::wstring> recurse;
@@ -113,8 +166,7 @@ namespace test {
         if (f.attributes & FILE_ATTRIBUTE_DIRECTORY)
           recurse.push_back(f.fileName);
         else
-          if (!DeleteFileW((dpath / f.fileName).c_str()))
-            throw WinFuncFailed("DeleteFile", (dpath / f.fileName).u8string().c_str());
+          delete_file(dpath / f.fileName);
       }
       for (auto r : recurse)
         recursive_delete_files(dpath / r);

@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
   using namespace test;
 
   auto dllPath = path_of_usvfs_lib(platform_dependant_executable("usvfs", "dll"));
-  HMODULE loadDll = LoadLibrary(dllPath.c_str());
+  ScopedLoadLibrary loadDll(dllPath.c_str());
   if (!loadDll) {
     std::wcerr << L"failed to load usvfs dll: " << dllPath.c_str() << L", " << GetLastError() << std::endl;
     return 1;
@@ -352,6 +352,5 @@ int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
 
-  FreeLibrary(loadDll);
   return res;
 }

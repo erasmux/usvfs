@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <filesystem>
+#include "windows_sane.h"
 
 namespace test {
 
@@ -57,4 +58,19 @@ namespace test {
   // Recursively deletes the given path and all the files and directories under it
   // Use with care!!!
   void delete_directory_tree(const path& dpath);
+
+  // Recursively copies all files and directories from srcPath to destPath
+  void recursive_copy_files(const path& srcPath, const path& destPath, bool overwrite);
+
+  class ScopedLoadLibrary {
+  public:
+    ScopedLoadLibrary(const wchar_t* dllPath);
+    ~ScopedLoadLibrary();
+
+    // returns zero if load library failed
+    operator HMODULE() const { return m_mod; }
+
+  private:
+    HMODULE m_mod;
+  };
 };

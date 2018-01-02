@@ -72,7 +72,7 @@ public:
 
     m_cleanoutput = clean;
     m_output = nullptr;
-    errno_t err = fopen_s(&m_output, output_file, append ? "ab" : "wb");
+    errno_t err = fopen_s(&m_output, output_file, append ? "at" : "wt");
     if (err || !m_output)
       throw test::WinFuncFailed("fopen_s", output_file, err);
     else {

@@ -6,6 +6,10 @@
 
 class usvfs_test_options {
 public:
+  static constexpr auto DEFAULT_MAPPING = L"vfs_mappings.txt";
+  static constexpr auto MOUNT_DIR = L"mount";
+  static constexpr auto SOURCE_DIR = L"source";
+
   using path = test::path;
 
   // fills any values not set (or set to an empty value) to their default value
@@ -22,6 +26,7 @@ public:
   path mount;
   path source;
   path output;
+  path usvfs_log;
   std::wstring ops_options;
   bool temp_cleanup = false;
   bool force_temp_cleanup = false;
@@ -29,6 +34,9 @@ public:
 
 class usvfs_test_base {
 public:
+  static constexpr auto MOUNT_DIR = usvfs_test_options::MOUNT_DIR;
+  static constexpr auto SOURCE_DIR = usvfs_test_options::SOURCE_DIR;
+
   using path = test::path;
 
   // options object should outlive this object.
@@ -55,8 +63,8 @@ public:
   virtual void verify_source_non_existance(path rel_path);
 
 private:
-  bool cleanup_temp();
-  bool copy_fixture();
+  void cleanup_temp();
+  void copy_fixture();
   bool postmortem_check();
 
   void run_ops(std::wstring args);

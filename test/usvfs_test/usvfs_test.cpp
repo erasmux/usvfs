@@ -9,16 +9,17 @@ void print_usage(const std::wstring& test_name) {
   using namespace std;
   wcerr << "usage: " << test_name << " [<options>] <scenario>" << endl;
   wcerr << "available options:" << endl;
-  wcerr << " -ops32          : force 32bit file opertations process (default is same bitness)." << endl;
-  wcerr << " -ops64          : force 64bit file opertations process (default is same bitness)." << endl;
-  wcerr << " -opsexe <file>  : full path to file operations executable (overrides -ops32/64)." << endl;
-  wcerr << " -opsarg <arg>   : adds argument to the start of all file operations." << endl;
-  wcerr << " -fixture <dir>  : fixture dir (default is test\\fixtures\\" << test_name << "\\<scenario>)." << endl;
-  wcerr << " -mapping <file> : mapping file (default is <fixture dir>\\vfs_mappings.txt)." << endl;
-  wcerr << " -temp <dir>     : temp dir (default is test\\temp\\" << test_name << "\\<scenario>)." << endl;
-  wcerr << " -mount <dir>    : mount dir (default is <temp dir>\\mount)." << endl;
-  wcerr << " -source <dir>   : source dir (default is <temp dir>\\source)." << endl;
-  wcerr << " -out <file>     : output file (default is <temp dir>\\<scenario>.txt)." << endl;
+  wcerr << " -ops32           : force 32bit file opertations process (default is same bitness)." << endl;
+  wcerr << " -ops64           : force 64bit file opertations process (default is same bitness)." << endl;
+  wcerr << " -opsexe <file>   : full path to file operations executable (overrides -ops32/64)." << endl;
+  wcerr << " -opsarg <arg>    : adds argument to the start of all file operations." << endl;
+  wcerr << " -fixture <dir>   : fixture dir (default is test\\fixtures\\" << test_name << "\\<scenario>)." << endl;
+  wcerr << " -mapping <file>  : mapping file (default is <fixture dir>\\vfs_mappings.txt)." << endl;
+  wcerr << " -temp <dir>      : temp dir (default is test\\temp\\" << test_name << "\\<scenario>)." << endl;
+  wcerr << " -mount <dir>     : mount dir (default is <temp dir>\\mount)." << endl;
+  wcerr << " -source <dir>    : source dir (default is <temp dir>\\source)." << endl;
+  wcerr << " -out <file>      : output file (default is <temp dir>\\<scenario>.log)." << endl;
+  wcerr << " -usvfslog <file> : output file (default is <temp dir>\\<scenario>_usvfs.log)." << endl;
   wcerr << " -forcetemprecursivedelete : decimate temp dir even if doesn't look like a temp dir." << endl;
   wcerr << endl;
   wcerr << "note: mount and source dirs should not exist or be empty directories. if either of them" << endl;
@@ -127,6 +128,11 @@ int wmain(int argc, wchar_t *argv[])
       if (!verify_args_exist(L"-out", 1, ai, argc))
         return 1;
       options.output = argv[++ai];
+    }
+    else if (wcscmp(argv[ai], L"-usvfslog")) {
+      if (!verify_args_exist(L"-usvfslog", 1, ai, argc))
+        return 1;
+      options.usvfs_log = argv[++ai];
     }
     if (wcscmp(argv[ai], L"-recursivelyremovetempdirwithoutconfirmation"))
       options.force_temp_cleanup = true;

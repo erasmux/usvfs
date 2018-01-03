@@ -36,32 +36,32 @@ namespace test {
     return msg.str();
   }
 
-  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func)
+  WinFuncFailed WinFuncFailedGenerator::operator()(const char* func)
   {
     fmt::MemoryWriter msg;
     msg << func << "() failed : lastError=" << m_gle;
-    return std::move(WinFuncFailed(msg.str()));
+    return WinFuncFailed(msg.str());
   }
 
-  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, unsigned long res)
+  WinFuncFailed WinFuncFailedGenerator::operator()(const char* func, unsigned long res)
   {
     fmt::MemoryWriter msg;
     msg << func << "() failed : result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << m_gle;
-    return std::move(WinFuncFailed(msg.str()));
+    return WinFuncFailed(msg.str());
   }
 
-  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, const char* arg1)
+  WinFuncFailed WinFuncFailedGenerator::operator()(const char* func, const char* arg1)
   {
     fmt::MemoryWriter msg;
     msg << func << "() failed : " << arg1 << ", lastError=" << m_gle;
-    return std::move(WinFuncFailed(msg.str()));
+    return WinFuncFailed(msg.str());
   }
 
-  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, const char* arg1, unsigned long res)
+  WinFuncFailed WinFuncFailedGenerator::operator()(const char* func, const char* arg1, unsigned long res)
   {
     fmt::MemoryWriter msg;
     msg << func << "() failed : " << arg1 << ", result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << m_gle;
-    return std::move(WinFuncFailed(msg.str()));
+    return WinFuncFailed(msg.str());
   }
 
   path path_of_test_bin(const path& relative) {

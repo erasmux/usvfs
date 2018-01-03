@@ -40,10 +40,10 @@ namespace test {
 
     DWORD lastError() const { return m_gle; }
 
-    WinFuncFailed&& operator()(const char* func);
-    WinFuncFailed&& operator()(const char* func, unsigned long res);
-    WinFuncFailed&& operator()(const char* func, const char* arg1);
-    WinFuncFailed&& operator()(const char* func, const char* arg1, unsigned long res);
+    WinFuncFailed operator()(const char* func);
+    WinFuncFailed operator()(const char* func, unsigned long res);
+    WinFuncFailed operator()(const char* func, const char* arg1);
+    WinFuncFailed operator()(const char* func, const char* arg1, unsigned long res);
 
   private:
     DWORD m_gle;

@@ -29,23 +29,28 @@ namespace test {
   class WinFuncFailed : public std::runtime_error
   {
   public:
-    // TODO: The whole WinFuncFailed interface is flawed!!!!
+    using runtime_error::runtime_error;
+  };
 
-    WinFuncFailed(const char* func)
-      : std::runtime_error(msg(func)) {}
-    WinFuncFailed(const char* func, unsigned long res)
-      : std::runtime_error(msg(func, res)) {}
-    WinFuncFailed(const char* func, const char* arg1)
-      : std::runtime_error(msg(func, arg1)) {}
-    WinFuncFailed(const char* func, const char* arg1, unsigned long res)
-      : std::runtime_error(msg(func, arg1, res)) {}
+  class WinFuncFailedGenerator
+  {
+  public:
+    WinFuncFailedGenerator(DWORD gle = GetLastError()) : m_gle(gle) {}
+    WinFuncFailedGenerator(const WinFuncFailedGenerator&) = delete;
+
+    DWORD lastError() const { return m_gle; }
+
+    WinFuncFailed&& operator()(const char* func);
+    WinFuncFailed&& operator()(const char* func, unsigned long res);
+    WinFuncFailed&& operator()(const char* func, const char* arg1);
+    WinFuncFailed&& operator()(const char* func, const char* arg1, unsigned long res);
 
   private:
-    std::string msg(const char* func);
-    std::string msg(const char* func, unsigned long res);
-    std::string msg(const char* func, const char* arg1);
-    std::string msg(const char* func, const char* arg1, unsigned long res);
+    DWORD m_gle;
   };
+
+  // trick to guarantee the evalutation of GetLastError() before the evalution of the parameters to the WinFuncFailed message generation
+#define throw_testWinFuncFailed(...) do { ::test::WinFuncFailedGenerator exceptionGenerator; throw exceptionGenerator(__VA_ARGS__); } while (false)
 
   class ScopedFILE {
   public:

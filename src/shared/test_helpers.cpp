@@ -36,32 +36,32 @@ namespace test {
     return msg.str();
   }
 
-  std::string WinFuncFailed::msg(const char* func)
+  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func)
   {
     fmt::MemoryWriter msg;
-    msg << func << "() failed : lastError=" << GetLastError();
-    return msg.str();
+    msg << func << "() failed : lastError=" << m_gle;
+    return std::move(WinFuncFailed(msg.str()));
   }
 
-  std::string WinFuncFailed::msg(const char* func, unsigned long res)
+  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, unsigned long res)
   {
     fmt::MemoryWriter msg;
-    msg << func << "() failed : result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << GetLastError();
-    return msg.str();
+    msg << func << "() failed : result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << m_gle;
+    return std::move(WinFuncFailed(msg.str()));
   }
 
-  std::string WinFuncFailed::msg(const char* func, const char* arg1)
+  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, const char* arg1)
   {
     fmt::MemoryWriter msg;
-    msg << func << "() failed : " << arg1 << ", lastError=" << GetLastError();
-    return msg.str();
+    msg << func << "() failed : " << arg1 << ", lastError=" << m_gle;
+    return std::move(WinFuncFailed(msg.str()));
   }
 
-  std::string WinFuncFailed::msg(const char* func, const char* arg1, unsigned long res)
+  WinFuncFailed&& WinFuncFailedGenerator::operator()(const char* func, const char* arg1, unsigned long res)
   {
     fmt::MemoryWriter msg;
-    msg << func << "() failed : " << arg1 << ", result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << GetLastError();
-    return msg.str();
+    msg << func << "() failed : " << arg1 << ", result=" << res << " (0x" << fmt::hex(res) << "), lastError=" << m_gle;
+    return std::move(WinFuncFailed(msg.str()));
   }
 
   path path_of_test_bin(const path& relative) {
@@ -105,19 +105,19 @@ namespace test {
     ScopedFILE f;
     errno_t err = _wfopen_s(f, file.c_str(), binary ? L"rb" : L"rt");
     if (err || !f)
-      throw test::WinFuncFailed("_wfopen_s", file.u8string().c_str(), err);
+      throw_testWinFuncFailed("_wfopen_s", file.u8string().c_str(), err);
 
     if (fseek(f, 0, SEEK_END))
-      throw test::WinFuncFailed("fseek", (unsigned long) 0);
+      throw_testWinFuncFailed("fseek", (unsigned long) 0);
 
     long size = ftell(f);
     if (size < 0)
-      throw test::WinFuncFailed("ftell", (unsigned long) size);
+      throw_testWinFuncFailed("ftell", (unsigned long) size);
     if (size > 0x10000000) // sanity check limit to 256M
       throw test::FuncFailed("read_small_file", "file size too large", (unsigned long) size);
 
     if (fseek(f, 0, SEEK_SET))
-      throw test::WinFuncFailed("fseek", (unsigned long) 0);
+      throw_testWinFuncFailed("fseek", (unsigned long) 0);
 
     std::vector<char> content(static_cast<size_t>(size));
     content.resize(fread(content.data(), sizeof(char), content.size(), f));
@@ -145,7 +145,7 @@ namespace test {
     if (!DeleteFileW(file.c_str())) {
       auto err = GetLastError();
       if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
-        throw WinFuncFailed("DeleteFile", file.u8string().c_str());
+        throw_testWinFuncFailed("DeleteFile", file.u8string().c_str());
     }
   }
 
@@ -171,7 +171,7 @@ namespace test {
       for (auto r : recurse)
         recursive_delete_files(dpath / r);
       if (!RemoveDirectoryW(dpath.c_str()))
-        throw WinFuncFailed("RemoveDirectory", dpath.u8string().c_str());
+        throw_testWinFuncFailed("RemoveDirectory", dpath.u8string().c_str());
     }
     if (winapi::ex::wide::fileExists(dpath.c_str()))
       throw FuncFailed("delete_directory_tree", dpath.u8string().c_str());
@@ -192,7 +192,7 @@ namespace test {
       if (!destIsDir)
       {
         if (!CopyFileW(src_path.c_str(), dest_path.c_str(), overwrite))
-          throw WinFuncFailed("CopyFile", (src_path.u8string() + " => " + dest_path.u8string()).c_str());
+          throw_testWinFuncFailed("CopyFile", (src_path.u8string() + " => " + dest_path.u8string()).c_str());
         return;
       }
       else
@@ -213,7 +213,7 @@ namespace test {
         recurse.push_back(f.fileName);
       else
         if (!CopyFileW((src_path / f.fileName).c_str(), (dest_path / f.fileName).c_str(), overwrite))
-          throw WinFuncFailed("CopyFile",
+          throw_testWinFuncFailed("CopyFile",
             ((src_path / f.fileName).u8string() + " => " + (dest_path / f.fileName).u8string()).c_str());
     }
     for (auto r : recurse)

@@ -13,17 +13,18 @@ namespace test {
     FuncFailed(const char* func)
       : std::runtime_error(msg(func)) {}
     FuncFailed(const char* func, unsigned long res)
-      : std::runtime_error(msg(func, res)) {}
+      : std::runtime_error(msg(func, nullptr, &res)) {}
     FuncFailed(const char* func, const char* arg1)
       : std::runtime_error(msg(func, arg1)) {}
     FuncFailed(const char* func, const char* arg1, unsigned long res)
-      : std::runtime_error(msg(func, arg1, res)) {}
+      : std::runtime_error(msg(func, arg1, &res)) {}
+    FuncFailed(const char* func, const char* what, const char* arg1)
+      : std::runtime_error(msg(func, arg1, nullptr, what)) {}
+    FuncFailed(const char* func, const char* what, const char* arg1, unsigned long res)
+      : std::runtime_error(msg(func, arg1, &res, what)) {}
 
   private:
-    std::string msg(const char* func);
-    std::string msg(const char* func, unsigned long res);
-    std::string msg(const char* func, const char* arg1);
-    std::string msg(const char* func, const char* arg1, unsigned long res);
+    std::string msg(const char* func, const char* arg1 = nullptr, const unsigned long* res = nullptr, const char* what = nullptr);
   };
 
   class WinFuncFailed : public std::runtime_error

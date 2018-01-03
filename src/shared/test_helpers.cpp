@@ -8,31 +8,19 @@
 
 namespace test {
 
-  std::string FuncFailed::msg(const char* func)
+  std::string FuncFailed::msg(const char* func, const char* arg1, const unsigned long* res, const char* what)
   {
     fmt::MemoryWriter msg;
-    msg << func << "() failed";
-    return msg.str();
-  }
-
-  std::string FuncFailed::msg(const char* func, unsigned long res)
-  {
-    fmt::MemoryWriter msg;
-    msg << func << "() failed : result=" << res << " (0x" << fmt::hex(res) << ")";
-    return msg.str();
-  }
-
-  std::string FuncFailed::msg(const char* func, const char* arg1)
-  {
-    fmt::MemoryWriter msg;
-    msg << func << "() failed : " << arg1;
-    return msg.str();
-  }
-
-  std::string FuncFailed::msg(const char* func, const char* arg1, unsigned long res)
-  {
-    fmt::MemoryWriter msg;
-    msg << func << "() failed : " << arg1 << ", result=" << res << " (0x" << fmt::hex(res) << ")";
+    msg << func << "() " << (what ? what : "failed");
+    const char* sep = " : ";
+    if (arg1) {
+      msg << sep << arg1;
+      sep = ", ";
+    }
+    if (res) {
+      msg << sep << "result = " << *res << " (0x" << fmt::hex(*res) << ")";
+      sep = ", ";
+    }
     return msg.str();
   }
 
@@ -181,7 +169,7 @@ namespace test {
   {
     bool srcIsDir = false, destIsDir = false;
     if (!winapi::ex::wide::fileExists(src_path.c_str(), &srcIsDir))
-      throw FuncFailed("recursive_copy", ("source doesn't exist: " + src_path.u8string()).c_str());
+      throw FuncFailed("recursive_copy", "source doesn't exist", src_path.u8string().c_str());
     if (!winapi::ex::wide::fileExists(dest_path.c_str(), &destIsDir) && srcIsDir)
     {
       winapi::ex::wide::createPath(dest_path.c_str());
@@ -196,12 +184,12 @@ namespace test {
         return;
       }
       else
-        throw FuncFailed("recursive_copy",
-          ("source is a file but destination is a directory: " + src_path.u8string() + ", " + dest_path.u8string()).c_str());
+        throw FuncFailed("recursive_copy", "source is a file but destination is a directory",
+                         (src_path.u8string() + ", " + dest_path.u8string()).c_str());
 
     if (!destIsDir)
-      throw FuncFailed("recursive_copy",
-        ("source is a directory but destination is a file: " + src_path.u8string() + ", " + dest_path.u8string()).c_str());
+      throw FuncFailed("recursive_copy", "source is a directory but destination is a file",
+                        (src_path.u8string() + ", " + dest_path.u8string()).c_str());
 
     // source and destination are both directories:
     std::vector<std::wstring> recurse;

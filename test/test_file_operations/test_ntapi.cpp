@@ -125,7 +125,7 @@ TestNtApi::SafeHandle TestNtApi::open_directory(const path& directory_path, bool
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtCreateFile", status);
   if (!NT_SUCCESS(iosb.Status))
-    throw test::FuncFailed("NtCreateFile status", iosb.Status);
+    throw test::FuncFailed("NtCreateFile", "bad iosb.Status", iosb.Status);
 
   return dir;
 }
@@ -152,9 +152,9 @@ TestFileSystem::FileInfoList TestNtApi::list_directory(const path& directory_pat
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtQueryDirectoryFile", status);
     if (!NT_SUCCESS(iosb.Status))
-      throw test::FuncFailed("NtQueryDirectoryFile status", iosb.Status);
+      throw test::FuncFailed("NtQueryDirectoryFile", "bad iosb.Status", iosb.Status);
     if (iosb.Information == 0) // This shouldn't happend unless the filename (not full path) is larger then sizeof(buf)
-      throw test::FuncFailed("NtQueryDirectoryFile buffer too small", iosb.Information);
+      throw test::FuncFailed("NtQueryDirectoryFile", "buffer too small", iosb.Information);
 
     PFILE_BOTH_DIR_INFORMATION info = reinterpret_cast<PFILE_BOTH_DIR_INFORMATION>(buf);
     while (true)
@@ -208,7 +208,7 @@ void TestNtApi::read_file(const path& file_path)
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtOpenFile", status);
   if (!NT_SUCCESS(iosb.Status))
-    throw test::FuncFailed("NtOpenFile status", iosb.Status);
+    throw test::FuncFailed("NtOpenFile", "bad iosb.Status", iosb.Status);
 
   uint32_t total = 0;
   bool ends_with_newline = true;
@@ -297,7 +297,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtCreateFile", status);
   if (!NT_SUCCESS(iosb.Status))
-    throw test::FuncFailed("NtCreateFile status", iosb.Status);
+    throw test::FuncFailed("NtCreateFile", "bad iosb.Status", iosb.Status);
 
   if (mode == write_mode::manual_truncate)
   {
@@ -309,7 +309,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtSetInformationFile", status);
     if (!NT_SUCCESS(iosb.Status))
-      throw test::FuncFailed("NtSetInformationFile status", iosb.Status);
+      throw test::FuncFailed("NtSetInformationFile", "bad iosb.Status", iosb.Status);
   }
 
   // finally write the data:
@@ -321,7 +321,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   if (!NT_SUCCESS(status))
     throw test::FuncFailed("NtWriteFile", status);
   if (!NT_SUCCESS(iosb.Status))
-    throw test::FuncFailed("NtWriteFile status", iosb.Status);
+    throw test::FuncFailed("NtWriteFile", "bad iosb.Status", iosb.Status);
   total += iosb.Information;
 
   if (add_new_line)
@@ -332,7 +332,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtWriteFile", status);
     if (!NT_SUCCESS(iosb.Status))
-      throw test::FuncFailed("NtWriteFile status", iosb.Status);
+      throw test::FuncFailed("NtWriteFile", "bad iosb.Status", iosb.Status);
     total += iosb.Information;
   }
 

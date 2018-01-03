@@ -23,7 +23,7 @@ void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring
 #endif
 
   if (fixture.empty())
-    fixture = path_of_test_bin(test_name / scenario);
+    fixture = path_of_test_fixtures(test_name / scenario);
 
   if (mapping.empty())
     mapping = fixture / DEFAULT_MAPPING;
@@ -42,17 +42,12 @@ void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring
   }
 
   if (output.empty()) {
-    output = temp / test_name;
-    output += ".log";
-  }
-
-  if (output.empty()) {
-    output = temp / test_name;
+    output = temp / scenario;
     output += ".log";
   }
 
   if (usvfs_log.empty()) {
-    usvfs_log = temp / test_name;
+    usvfs_log = temp / scenario;
     usvfs_log += "_usvfs.log";
   }
 }
@@ -86,6 +81,8 @@ public:
   usvfs_connector(const usvfs_test_options& options)
     : m_exit_future(m_exit_signal.get_future())
   {
+    winapi::ex::wide::createPath(options.usvfs_log.parent_path().c_str());
+
     errno_t err = _wfopen_s(m_usvfs_log, options.usvfs_log.c_str(), L"wt");
     if (err || !m_usvfs_log)
       throw_testWinFuncFailed("_wfopen_s", options.usvfs_log.u8string().c_str(), err);
@@ -307,10 +304,10 @@ public:
 
   static bool empty_line(const char* line) {
     for (; *line; ++line) {
-      if (!std::isspace(*line))
-        return false;
       if (*line == '#') // comment, ignore rest of line
         return true;
+      else if (!std::isspace(*line))
+        return false;
     }
     return true;
   }
@@ -343,22 +340,34 @@ void usvfs_test_base::cleanup_temp()
   else {
     std::vector<std::wstring> cleanfiles;
     std::vector<std::wstring> cleandirs;
-    bool other_dirs = false;
+    std::vector<std::wstring> otherdirs;
+    bool output_file = false;
     for (auto f : quickFindFiles(m_o.temp.c_str(), L"*"))
-      if (f.attributes & FILE_ATTRIBUTE_DIRECTORY == 0)
+      if (f.fileName == L"." || f.fileName == L"..")
+        continue;
+      else if ((f.attributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+        if (f.fileName == m_o.output.filename())
+          output_file = true;
         cleanfiles.push_back(f.fileName);
+      }
       else if (f.fileName == SOURCE_DIR || f.fileName == MOUNT_DIR)
         cleandirs.push_back(f.fileName);
       else
-        other_dirs = true;
-    if (other_dirs || cleandirs.empty() && !cleanfiles.empty())
-      throw FuncFailed("cleanup_temp", "temp exists but does not look like a temp dir (clean manually and rerun)", m_o.temp.u8string().c_str());
-    std::wcout << "Cleaning previous temp dir: " << m_o.temp.c_str() << std::endl;
-    Sleep(5000); // TODO: remove this after we verify this code works well
-    for (auto f : cleanfiles)
-      delete_file(m_o.temp / f);
-    for (auto d : cleandirs)
-      recursive_delete_files(m_o.temp / d);
+        otherdirs.push_back(f.fileName);
+    if (!cleanfiles.empty() || !cleandirs.empty() || !otherdirs.empty())
+    {
+      if (!m_o.force_temp_cleanup && !otherdirs.empty())
+        throw FuncFailed("cleanup_temp", "Refusing to clean temp dir with non-mount/source directories (clean manually and rerun)", m_o.temp.u8string().c_str());
+      if (!m_o.force_temp_cleanup && cleandirs.empty() && !output_file)
+        throw FuncFailed("cleanup_temp", "Refusing to clean temp dir with no directories and no output log (clean manually and rerun)", m_o.temp.u8string().c_str());
+      std::wcout << "Cleaning previous temp dir: " << m_o.temp.c_str() << std::endl;
+      for (auto f : cleanfiles)
+        delete_file(m_o.temp / f);
+      for (auto d : cleandirs)
+        recursive_delete_files(m_o.temp / d);
+      for (auto d : otherdirs)
+        recursive_delete_files(m_o.temp / d);
+    }
   }
 }
 
@@ -388,9 +397,10 @@ void usvfs_test_base::copy_fixture()
 test::ScopedFILE usvfs_test_base::output()
 {
   test::ScopedFILE log;
-  errno_t err = _wfopen_s(log, m_o.output.c_str(), L"wt");
+  errno_t err = _wfopen_s(log, m_o.output.c_str(), m_clean_output ? L"wt" : L"at");
   if (err || !log)
     throw_testWinFuncFailed("_wfopen_s", m_o.output.u8string().c_str(), err);
+  m_clean_output = false;
   return log;
 }
 
@@ -407,6 +417,8 @@ int usvfs_test_base::run()
   using namespace std;
 
   try {
+    winapi::ex::wide::createPath(m_o.output.parent_path().c_str());
+
     // we read mappings first only because it is "non-destructive" but might raise an error if mappings invalid
     auto mappings = mappings_reader(m_o.mount, m_o.source).read(m_o.mapping);
 

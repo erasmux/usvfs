@@ -74,4 +74,5 @@ private:
   bool verify_file(const path& file, const char* contents);
 
   const usvfs_test_options& m_o;
+  bool m_clean_output = true;
 };

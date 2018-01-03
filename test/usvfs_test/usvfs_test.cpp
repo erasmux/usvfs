@@ -134,13 +134,13 @@ int wmain(int argc, wchar_t *argv[])
         return 1;
       options.usvfs_log = argv[++ai];
     }
-    else if (wcscmp(argv[ai], L"-recursivelyremovetempdirwithoutconfirmation") == 0)
+    else if (wcscmp(argv[ai], L"-forcetemprecursivedelete") == 0)
       options.force_temp_cleanup = true;
     else if (argv[ai][0] == '-') {
       wcerr << L"Unknown option " << argv[ai] << endl;
       return 1;
     }
-    else if (argv[ai][0]) {
+    else if (!argv[ai][0]) {
       wcerr << L"Scenario name can not be empty!" << endl;
       return 1;
     }

@@ -84,7 +84,7 @@ TestW32Api::path TestW32Api::real_path(const char* abs_or_rel_path)
   char buf[1024];
   size_t res = GetFullPathNameA(abs_or_rel_path, _countof(buf), buf, NULL);
   if (!res || res >= _countof(buf))
-    throw test::WinFuncFailed("GetFullPathName", res);
+    throw_testWinFuncFailed("GetFullPathName", res);
   return buf;
 }
 
@@ -97,7 +97,7 @@ TestFileSystem::FileInfoList TestW32Api::list_directory(const path& directory_pa
     FindFirstFileW((directory_path / L"*").c_str(), &fd));
   print_result("FindFirstFileW", find.result_for_print(), true);
   if (!find.valid())
-    throw test::WinFuncFailed("FindFirstFileW");
+    throw_testWinFuncFailed("FindFirstFileW");
 
   FileInfoList files;
   while (true)
@@ -130,7 +130,7 @@ void TestW32Api::create_path(const path& directory_path)
       throw std::runtime_error("path exists but not a directory");
   }
   if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND)
-    throw test::WinFuncFailed("GetFileAttributesW");
+    throw_testWinFuncFailed("GetFileAttributesW");
 
   if (err != ERROR_FILE_NOT_FOUND) // ERROR_FILE_NOT_FOUND means parent directory already exists
     create_path(directory_path.parent_path()); // otherwise create parent directory (recursively)
@@ -140,7 +140,7 @@ void TestW32Api::create_path(const path& directory_path)
   BOOL res = CreateDirectoryW(directory_path.c_str(), NULL);
   print_result("CreateDirectoryW", res, true);
   if (!res)
-    throw test::WinFuncFailed("CreateDirectoryW");
+    throw_testWinFuncFailed("CreateDirectoryW");
 }
 
 void TestW32Api::read_file(const path& file_path)
@@ -151,7 +151,7 @@ void TestW32Api::read_file(const path& file_path)
     CreateFileW(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
   print_result("CreateFileW", file.result_for_print(), true);
   if (!file.valid())
-    throw test::WinFuncFailed("CreateFile");
+    throw_testWinFuncFailed("CreateFile");
 
   uint32_t total = 0;
   bool ends_with_newline = true;
@@ -163,7 +163,7 @@ void TestW32Api::read_file(const path& file_path)
     BOOL res = ReadFile(file, buf, sizeof(buf), &read, NULL);
     print_result("ReadFile", res, true);
     if (!res)
-      throw test::WinFuncFailed("ReadFile");
+      throw_testWinFuncFailed("ReadFile");
     if (!read) // eof
       break;
 
@@ -227,14 +227,14 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
     CreateFile(file_path.c_str(), access, 0, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL));
   print_result("CreateFileW", file.result_for_print(), true);
   if (!file.valid())
-    throw test::WinFuncFailed("CreateFile");
+    throw_testWinFuncFailed("CreateFile");
 
   if (mode == write_mode::manual_truncate)
   {
     BOOL res = SetEndOfFile(file);
     print_result("SetEndOfFile", res, true);
     if (!res)
-      throw test::WinFuncFailed("SetEndOfFile");
+      throw_testWinFuncFailed("SetEndOfFile");
   }
 
   if (mode == write_mode::append)
@@ -242,7 +242,7 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
     DWORD res = SetFilePointer(file, 0, NULL, FILE_END);
     print_result("SetFilePointer(FILE_END)", res, true);
     if (res == INVALID_SET_FILE_POINTER)
-      throw test::WinFuncFailed("SetEndOfFile");
+      throw_testWinFuncFailed("SetEndOfFile");
   }
 
   // finally write the data:
@@ -252,14 +252,14 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
   BOOL res = WriteFile(file, data, static_cast<DWORD>(size), &written, NULL);
   print_result("WriteFile", written, true);
   if (!res)
-    throw test::WinFuncFailed("WriteFile");
+    throw_testWinFuncFailed("WriteFile");
   total += written;
 
   if (add_new_line) {
     res = WriteFile(file, "\n", 1, &written, NULL);
     print_result("WriteFile", written, true, "<new line>");
     if (!res)
-      throw test::WinFuncFailed("WriteFile");
+      throw_testWinFuncFailed("WriteFile");
     total += written;
   }
 

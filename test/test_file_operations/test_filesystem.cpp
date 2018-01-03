@@ -22,11 +22,11 @@ TestFileSystem::path TestFileSystem::current_directory()
 {
   DWORD res = GetCurrentDirectoryW(0, NULL);
   if (!res)
-    throw test::WinFuncFailed("GetCurrentDirectory", res);
+    throw_testWinFuncFailed("GetCurrentDirectory", res);
   std::wstring buf(res + 1,'\0');
   res = GetCurrentDirectoryW(buf.length(), &buf[0]);
   if (!res || res >= buf.length())
-    throw test::WinFuncFailed("GetCurrentDirectory", res);
+    throw_testWinFuncFailed("GetCurrentDirectory", res);
   buf.resize(res);
   return buf;
 }

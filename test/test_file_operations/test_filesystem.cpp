@@ -33,24 +33,7 @@ TestFileSystem::path TestFileSystem::current_directory()
 
 TestFileSystem::path TestFileSystem::relative_path(path full_path)
 {
-  auto rel_begin = full_path.begin();
-  auto base_iter = m_basepath.begin();
-  while (rel_begin != full_path.end() && base_iter != m_basepath.end() && *rel_begin == *base_iter) {
-    ++rel_begin;
-    ++base_iter;
-  }
-
-  if (base_iter != m_basepath.end()) // full_path is not a sub-folder of m_basepath
-    return full_path;
-
-  if (rel_begin == full_path.end())  // full_path == m_basepath
-      return path(L".");
-
-  // full_path is a sub-folder of m_basepath so take only relative path
-  path result;
-  for (; rel_begin != full_path.end(); ++rel_begin)
-    result /= *rel_begin;
-  return result;
+  return test::path_as_relative(m_basepath, full_path);
 }
 
 //static

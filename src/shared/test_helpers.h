@@ -56,7 +56,11 @@ namespace test {
   class ScopedFILE {
   public:
     ScopedFILE(FILE* f = nullptr) : m_f(f) {}
+    ScopedFILE(const ScopedFILE&) = delete;
+    ScopedFILE(ScopedFILE&& other) : m_f(other.m_f) { other.m_f = nullptr; }
     ~ScopedFILE() { if (m_f) fclose(m_f); }
+
+    void close() { if (m_f) { fclose(m_f); m_f = nullptr; } }
 
     operator bool() const { return m_f; }
     operator FILE*() const { return m_f; }
@@ -76,6 +80,11 @@ namespace test {
   path path_of_usvfs_lib(const path& relative = path());
 
   std::string platform_dependant_executable(const char* name, const char* ext = "exe", const char* platform = nullptr);
+
+  // if full_path is a subfolder of base returns only the relative path,
+  // if full_path and base are the same folder "." is returned,
+  // otherwise full_path is returned unchanged
+  path path_as_relative(const path& base, const path& full_path);
 
   std::vector<char> read_small_file(const path& file, bool binary = true);
 

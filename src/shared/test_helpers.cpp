@@ -86,6 +86,29 @@ namespace test {
     return res;
   }
 
+  path path_as_relative(const path& base, const path& full_path)
+  {
+    auto rel_begin = full_path.begin();
+    auto base_iter = base.begin();
+    while (rel_begin != full_path.end() && base_iter != base.end() && *rel_begin == *base_iter) {
+      ++rel_begin;
+      ++base_iter;
+    }
+
+    if (base_iter != base.end()) // full_path is not a sub-folder of base
+      return full_path;
+
+    if (rel_begin == full_path.end())  // full_path == base
+      return path(L".");
+
+    // full_path is a sub-folder of base so take only relative path
+    path result;
+    for (; rel_begin != full_path.end(); ++rel_begin)
+      result /= *rel_begin;
+    return result;
+  }
+
+
   std::vector<char> read_small_file(const path& file, bool binary)
   {
     using namespace std;

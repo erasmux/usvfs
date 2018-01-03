@@ -36,6 +36,8 @@ class usvfs_test_base {
 public:
   static constexpr auto MOUNT_DIR = usvfs_test_options::MOUNT_DIR;
   static constexpr auto SOURCE_DIR = usvfs_test_options::SOURCE_DIR;
+  static constexpr auto MOUNT_LABEL = "mount:";
+  static constexpr auto SOURCE_LABEL = "source:";
 
   using path = test::path;
 
@@ -52,24 +54,24 @@ public:
 
   // helpers for derived scenarios:
 
-  virtual void ops_list(path rel_path, bool recursive, bool with_contents);
-  virtual void ops_read(path rel_path);
-  virtual void ops_rewrite(path rel_path, const wchar_t* contents);
-  virtual void ops_overwrite(path rel_path, const wchar_t* contents, bool recursive);
+  virtual void ops_list(const path& rel_path, bool recursive, bool with_contents);
+  virtual void ops_read(const path& rel_path);
+  virtual void ops_rewrite(const path& rel_path, const char* contents);
+  virtual void ops_overwrite(const path& rel_path, const char* contents, bool recursive);
 
-  virtual void verify_mount_file(path rel_path, const wchar_t* contents);
-  virtual void verify_mount_non_existance(path rel_path);
-  virtual void verify_source_file(path rel_path, const wchar_t* contents);
-  virtual void verify_source_non_existance(path rel_path);
+  virtual void verify_mount_file(const path& rel_path, const char* contents);
+  virtual void verify_mount_non_existance(const path& rel_path);
+  virtual void verify_source_file(const path& rel_path, const char* contents);
+  virtual void verify_source_non_existance(const path& rel_path);
 
 private:
   void cleanup_temp();
   void copy_fixture();
   bool postmortem_check();
 
-  void run_ops(std::wstring args);
-  void verify_file(path file, const wchar_t* contents);
-  void verify_non_existance(path apath);
+  test::ScopedFILE output();
+  void run_ops(std::wstring preargs, const path& rel_path, const std::wstring& postargs = std::wstring());
+  bool verify_file(const path& file, const char* contents);
 
   const usvfs_test_options& m_o;
 };

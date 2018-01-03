@@ -3,10 +3,12 @@
 #include <winapi.h>
 #include <stringcast.h>
 #include <usvfs.h>
-#include <iostream>
+#include <vector>
+#include <cctype>
 #include <thread>
 #include <future>
 #include <chrono>
+#include <iostream>
 
 // usvfs_test_options class:
 
@@ -79,6 +81,8 @@ void usvfs_test_options::add_ops_options(const std::wstring& options)
 
 class usvfs_connector {
 public:
+  using path = test::path;
+
   usvfs_connector(const usvfs_test_options& options)
     : m_exit_future(m_exit_signal.get_future())
   {
@@ -101,9 +105,91 @@ public:
     m_log_thread.join();
   }
 
+  enum class map_type {
+    none, // the mapping_reader uses this value but will never pass it to the usvfs_connector (which ignored such entries)
+    dir,
+    dircreate,
+    file
+  };
+
+  struct mapping {
+    mapping(map_type itype, std::wstring isource, std::wstring idestination)
+      : type(itype), source(isource), destination(idestination) {}
+
+    map_type type;
+    path source;
+    path destination;
+  };
+
+  using mappings_list = std::vector<mapping>;
+
+  void updateMapping(const mappings_list& mappings, const usvfs_test_options& options, FILE* log)
+  {
+    using namespace std;
+    using namespace usvfs::shared;
+
+    fprintf(log, "Updating VFS mappings:\n");
+
+    ClearVirtualMappings();
+
+    for (const auto& map : mappings) {
+      const string& source = usvfs_test_base::SOURCE_LABEL +
+        test::path_as_relative(options.source, map.source).u8string();
+      const string& destination = usvfs_test_base::MOUNT_LABEL +
+        test::path_as_relative(options.mount, map.destination).u8string();
+      switch (map.type)
+      {
+      case map_type::dir:
+        fprintf(log, "  mapdir: %s => %s\n", source.c_str(), destination.c_str());
+        VirtualLinkDirectoryStatic(map.source.c_str(), map.destination.c_str(), LINKFLAG_RECURSIVE);
+        break;
+
+      case map_type::dircreate:
+        fprintf(log, "  mapdircreate: %s => %s\n", source.c_str(), destination.c_str());
+        VirtualLinkDirectoryStatic(map.source.c_str(), map.destination.c_str(), LINKFLAG_CREATETARGET|LINKFLAG_RECURSIVE);
+        break;
+
+      case map_type::file:
+        fprintf(log, "  mapfile: %s => %s\n", source.c_str(), destination.c_str());
+        VirtualLinkFile(map.source.c_str(), map.destination.c_str(), LINKFLAG_RECURSIVE);
+        break;
+      }
+    }
+
+    fprintf(log, "\n");
+  }
+
+  static DWORD spawn(wchar_t* commandline)
+  {
+    using namespace usvfs::shared;
+
+    STARTUPINFO si{ 0 };
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{ 0 };
+
+    if (!CreateProcessHooked(NULL, commandline, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+      throw_testWinFuncFailed("CreateProcessHooked", string_cast<std::string>(commandline, CodePage::UTF8).c_str());
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    DWORD exit = 99;
+    if (!GetExitCodeProcess(pi.hProcess, &exit))
+    {
+      test::WinFuncFailedGenerator failed;
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
+      throw failed("GetExitCodeProcess");
+    }
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return exit;
+  }
+
   void usvfs_logger()
   {
-    fprintf(m_usvfs_log, "usvfs log openned by usvfs_test");
+    fprintf(m_usvfs_log, "usvfs_test usvfs logger started:\n");
     fflush(m_usvfs_log);
 
     constexpr size_t size = 1024;
@@ -124,6 +210,9 @@ public:
       else
         wait_for = std::chrono::milliseconds(0);
     } while (m_exit_future.wait_for(wait_for) == std::future_status::timeout);
+
+    fprintf(m_usvfs_log, "usvfs log closed.\n");
+    m_usvfs_log.close();
   }
 
 private:
@@ -131,6 +220,106 @@ private:
   std::thread m_log_thread;
   std::promise<void> m_exit_signal;
   std::shared_future<void> m_exit_future;
+};
+
+
+// mappings_reader
+
+class mappings_reader
+{
+public:
+  using path = test::path;
+  using string = std::string;
+  using wstring = std::wstring;
+  using map_type = usvfs_connector::map_type;
+  using mapping = usvfs_connector::mapping;
+  using mappings_list = usvfs_connector::mappings_list;
+
+  mappings_reader(const path& mount_base, const path& source_base)
+    : m_mount_base(mount_base), m_source_base(source_base)
+  {
+  }
+
+  mappings_list read(const path& mapfile)
+  {
+    test::ScopedFILE map;
+    errno_t err = _wfopen_s(map, mapfile.c_str(), L"rt");
+    if (err || !map)
+      throw_testWinFuncFailed("_wfopen_s", mapfile.u8string().c_str(), err);
+
+    mappings_list mappings;
+
+    char line[1024];
+    while (!feof(map))
+    {
+      // read one line:
+      if (!fgets(line, _countof(line), map))
+        if (feof(map))
+          break;
+        else
+          throw_testWinFuncFailed("fgets", "reading mappings");
+
+      if (empty_line(line))
+        continue;
+
+      if (start_nesting(line, "mapdir"))
+        m_nesting = map_type::dir;
+      else if (start_nesting(line, "mapdircreate"))
+        m_nesting = map_type::dircreate;
+      else if (start_nesting(line, "mapfile"))
+        m_nesting = map_type::file;
+      else if (!isspace(*line)) // mapping sources should be indented and we already check all the mapping directives
+        throw test::FuncFailed("mappings_reader::read", "invalid mappings file line", line);
+      else {
+        const auto& source_rel = trimmed_wide_string(line);
+        mappings.push_back(mapping(m_nesting, (m_source_base / source_rel).wstring(), m_mount.wstring()));
+      }
+    }
+
+    return mappings;
+  }
+
+  bool start_nesting(const char* line, const char* directive)
+  {
+    // check if line starts with directive and if so skip it:
+    auto dlen = strlen(directive);
+    auto after = line + dlen;
+    if (strncmp(directive, line, dlen) == 0 && (!*after || isspace(*after)))
+    {
+      m_mount = m_mount_base;
+      const auto& mount_rel = trimmed_wide_string(after);
+      if (!mount_rel.empty())
+        m_mount /= mount_rel;
+      return true;
+    }
+    else
+      return false;
+  }
+
+  static wstring trimmed_wide_string(const char* in)
+  {
+    while (std::isspace(*in)) ++in;
+    auto end = in;
+    end += strlen(end);
+    while (end > in && std::isspace(*--end));
+    return usvfs::shared::string_cast<wstring>(string(in, end), usvfs::shared::CodePage::UTF8);
+  }
+
+  static bool empty_line(const char* line) {
+    for (; *line; ++line) {
+      if (!std::isspace(*line))
+        return false;
+      if (*line == '#') // comment, ignore rest of line
+        return true;
+    }
+    return true;
+  }
+
+private:
+  path m_mount_base;
+  path m_source_base;
+  path m_mount;
+  map_type m_nesting = map_type::none;
 };
 
 
@@ -196,6 +385,15 @@ void usvfs_test_base::copy_fixture()
   recursive_copy_files(fsource, m_o.source, false);
 }
 
+test::ScopedFILE usvfs_test_base::output()
+{
+  test::ScopedFILE log;
+  errno_t err = _wfopen_s(log, m_o.output.c_str(), L"wt");
+  if (err || !log)
+    throw_testWinFuncFailed("_wfopen_s", m_o.output.u8string().c_str(), err);
+  return log;
+}
+
 bool usvfs_test_base::postmortem_check()
 {
   // TODO: compare source with fixture source (no changes should be made to source)
@@ -209,21 +407,62 @@ int usvfs_test_base::run()
   using namespace std;
 
   try {
+    // we read mappings first only because it is "non-destructive" but might raise an error if mappings invalid
+    auto mappings = mappings_reader(m_o.mount, m_o.source).read(m_o.mapping);
+
     cleanup_temp();
     copy_fixture();
 
     usvfs_connector usvfs(m_o);
+    {
+      const auto& log = output();
+      usvfs.updateMapping(mappings, m_o, log);
 
-    return postmortem_check() ? 0 : 7;
+      fprintf(log, "running scenario %s:\n\n", scenario_name());
+    }
+    auto res = scenario_run();
+    {
+      const auto& log = output();
+      if (res)
+        fprintf(log, "\nscenario ended successfully!\n");
+      else
+        fprintf(log, "\nscenario failed miserably.\n");
+    }
+
+    if (!res)
+      return 7;
+
+    if (!postmortem_check())
+      return 8;
+
+    return 0;
   }
 #if 1 // just a convient way to not catch exception when debugging
   catch (const exception& e)
   {
-    wcerr << "ERROR: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+    try {
+      wcerr << "ERROR: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+      fprintf(output(), "ERROR: %s\n", e.what());
+    }
+    catch (const exception& e) {
+      wcerr << "ERROR^2: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+    }
+    catch (...) {
+      wcerr << "ERROR^2: unknown exception" << endl;
+    }
   }
   catch (...)
   {
-    wcerr << "ERROR: unknown exception" << endl;
+    try {
+      wcerr << "ERROR: unknown exception" << endl;
+      fprintf(output(), "ERROR: unknown exception\n");
+    }
+    catch (const exception& e) {
+      wcerr << "ERROR^2: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+    }
+    catch (...) {
+      wcerr << "ERROR^2: unknown exception" << endl;
+    }
   }
 #else
   catch (bool) {}
@@ -231,46 +470,124 @@ int usvfs_test_base::run()
   return 9; // exception
 }
 
-void usvfs_test_base::ops_list(path rel_path, bool recursive, bool with_contents)
+void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents)
 {
+  std::wstring cmd = recursive ? L"-r -list" : L"-list";
+  if (with_contents)
+    cmd += L"contents";
+  run_ops(cmd, rel_path);
 }
 
-void usvfs_test_base::ops_read(path rel_path)
+void usvfs_test_base::ops_read(const path& rel_path)
 {
+  run_ops(L"-read", rel_path);
 }
 
-void usvfs_test_base::ops_rewrite(path rel_path, const wchar_t* contents)
+void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents)
 {
+  using namespace usvfs::shared;
+  run_ops(L"-rewrite", rel_path,
+    L"\""+string_cast<std::wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::ops_overwrite(path rel_path, const wchar_t* contents, bool recursive)
+void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive)
 {
+  using namespace usvfs::shared;
+  run_ops(recursive ? L"-r overwrite" : L"-overwrite", rel_path,
+    L"\""+string_cast<std::wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::verify_mount_file(path rel_path, const wchar_t* contents)
+void usvfs_test_base::run_ops(std::wstring preargs, const path& rel_path, const std::wstring& postargs)
 {
+  using namespace usvfs::shared;
+  using string = std::string;
+  using wstring = std::wstring;
+
+  string commandlog = test::path(m_o.opsexe).filename().u8string();
+  wstring commandline = m_o.opsexe;
+  if (commandline.find(' ') != wstring::npos && commandline.find('"') == wstring::npos) {
+    commandline = L"\"" + commandline + L"\"";
+    commandlog = "\"" + commandlog + "\"";
+  }
+
+  if (!m_o.ops_options.empty()) {
+    commandline += L" ";
+    commandline += m_o.ops_options;
+    commandlog += " ";
+    commandlog += string_cast<string>(m_o.ops_options, CodePage::UTF8);
+  }
+
+  commandline += L" -cout+ ";
+  commandline += m_o.output;
+  commandlog += " -cout+ ";
+  commandlog += m_o.output.filename().u8string();
+
+  if (!preargs.empty()) {
+    commandline += L" ";
+    commandline += preargs;
+    commandlog += " ";
+    commandlog += string_cast<string>(preargs, CodePage::UTF8);
+  }
+
+  if (!rel_path.empty()) {
+    commandline += L" ";
+    commandline += (m_o.mount / rel_path).wstring();
+    commandlog += " ";
+    commandlog += MOUNT_LABEL + rel_path.u8string();
+  }
+
+  if (!postargs.empty()) {
+    commandline += L" ";
+    commandline += postargs;
+    commandlog += " ";
+    commandlog += string_cast<string>(postargs, CodePage::UTF8);
+  }
+
+  fprintf(output(), "Spawning: %s", commandlog.c_str());
+  auto res = usvfs_connector::spawn(&commandline[0]);
+
+  if (res)
+    throw test::FuncFailed("run_ops", commandlog.c_str(), res);
 }
 
-void usvfs_test_base::verify_mount_non_existance(path rel_path)
+void usvfs_test_base::verify_mount_file(const path& rel_path, const char* contents)
 {
+  if (verify_file((m_o.mount / rel_path).c_str(), contents))
+    throw test::FuncFailed("verify_mount_non_existance",
+      (MOUNT_LABEL + rel_path.u8string()).c_str(), contents);
 }
 
-void usvfs_test_base::verify_source_file(path rel_path, const wchar_t* contents)
+void usvfs_test_base::verify_source_file(const path& rel_path, const char* contents)
 {
+  if (verify_file((m_o.source / rel_path).c_str(), contents))
+    throw test::FuncFailed("verify_source_file",
+    (SOURCE_LABEL + rel_path.u8string()).c_str(), contents);
 }
 
-void usvfs_test_base::verify_source_non_existance(path rel_path)
+bool usvfs_test_base::verify_file(const path& file, const char* contents)
 {
+  // we allow difference in trailing whitespace (i.e. extra new line):
+
+  size_t sz = strlen(contents);
+  while (sz && isspace(contents[sz - 1])) --sz;
+
+  const auto& real_contents = test::read_small_file(file);
+  size_t real_sz = real_contents.size();
+  while (real_sz && isspace(real_contents[real_sz - 1])) --real_sz;
+
+  return sz == real_sz && memcmp(contents, real_contents.data(), sz);
 }
 
-void usvfs_test_base::run_ops(std::wstring args)
+void usvfs_test_base::verify_mount_non_existance(const path& rel_path)
 {
+  if (winapi::ex::wide::fileExists((m_o.mount / rel_path).c_str()))
+    throw test::FuncFailed("verify_mount_non_existance",
+      "path exists", (MOUNT_LABEL + rel_path.u8string()).c_str());
 }
 
-void usvfs_test_base::verify_file(path file, const wchar_t* contents)
+void usvfs_test_base::verify_source_non_existance(const path& rel_path)
 {
-}
-
-void usvfs_test_base::verify_non_existance(path apath)
-{
+  if (winapi::ex::wide::fileExists((m_o.source / rel_path).c_str()))
+    throw test::FuncFailed("verify_source_non_existance",
+      "path exists", (SOURCE_LABEL + rel_path.u8string()).c_str());
 }

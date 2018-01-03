@@ -272,7 +272,7 @@ public:
         throw test::FuncFailed("mappings_reader::read", "invalid mappings file line", line);
       else {
         const auto& source_rel = trimmed_wide_string(line);
-        mappings.push_back(mapping(m_nesting, (m_source_base / source_rel).wstring(), m_mount.wstring()));
+        mappings.push_back(mapping(m_nesting, m_source_base / source_rel, m_mount));
       }
     }
 
@@ -531,7 +531,7 @@ void usvfs_test_base::run_ops(std::wstring preargs, const path& rel_path, const 
 
   if (!rel_path.empty()) {
     commandline += L" ";
-    commandline += (m_o.mount / rel_path).wstring();
+    commandline += m_o.mount / rel_path;
     commandlog += " ";
     commandlog += MOUNT_LABEL + rel_path.u8string();
   }

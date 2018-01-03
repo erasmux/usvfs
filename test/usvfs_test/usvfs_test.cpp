@@ -5,9 +5,9 @@
 #include <stringcast.h>
 #include "usvfs_basic_test.h"
 
-void print_usage(const std::wstring& test_name) {
+void print_usage(const std::wstring& exe_name, const std::wstring& test_name) {
   using namespace std;
-  wcerr << "usage: " << test_name << " [<options>] <scenario>" << endl;
+  wcerr << "usage: " << exe_name << " [<options>] <scenario>" << endl;
   wcerr << "available options:" << endl;
   wcerr << " -ops32           : force 32bit file opertations process (default is same bitness)." << endl;
   wcerr << " -ops64           : force 64bit file opertations process (default is same bitness)." << endl;
@@ -79,62 +79,62 @@ int wmain(int argc, wchar_t *argv[])
 
   for (int ai = 1; ai < argc; ++ai)
   {
-    if (wcscmp(argv[ai], L"-ops32"))
+    if (wcscmp(argv[ai], L"-ops32") == 0)
       options.set_ops32();
-    else if (wcscmp(argv[ai], L"-ops64"))
+    else if (wcscmp(argv[ai], L"-ops64") == 0)
       options.set_ops64();
-    else if (wcscmp(argv[ai], L"-opsexe")) {
+    else if (wcscmp(argv[ai], L"-opsexe") == 0) {
       if (!verify_args_exist(L"-opsexe", 1, ai, argc))
         return 1;
       options.opsexe = argv[++ai];
       if (!verify_file(options.opsexe))
         return 1;
     }
-    else if (wcscmp(argv[ai], L"-opsarg")) {
+    else if (wcscmp(argv[ai], L"-opsarg") == 0) {
       if (!verify_args_exist(L"-opsarg", 1, ai, argc))
         return 1;
       options.add_ops_options(argv[++ai]);
     }
-    else if (wcscmp(argv[ai], L"-fixture")) {
+    else if (wcscmp(argv[ai], L"-fixture") == 0) {
       if (!verify_args_exist(L"-fixture", 1, ai, argc))
         return 1;
       options.fixture = argv[++ai];
       if (!verify_dir(options.fixture))
         return 1;
     }
-    else if (wcscmp(argv[ai], L"-mapping")) {
+    else if (wcscmp(argv[ai], L"-mapping") == 0) {
       if (!verify_args_exist(L"-mapping", 1, ai, argc))
         return 1;
       options.mapping = argv[++ai];
       if (!verify_file(options.mapping))
         return 1;
     }
-    else if (wcscmp(argv[ai], L"-temp")) {
+    else if (wcscmp(argv[ai], L"-temp") == 0) {
       if (!verify_args_exist(L"-temp", 1, ai, argc))
         return 1;
       options.mount = argv[++ai];
     }
-    else if (wcscmp(argv[ai], L"-mount")) {
+    else if (wcscmp(argv[ai], L"-mount") == 0) {
       if (!verify_args_exist(L"-mount", 1, ai, argc))
         return 1;
       options.mount = argv[++ai];
     }
-    else if (wcscmp(argv[ai], L"-source")) {
+    else if (wcscmp(argv[ai], L"-source") == 0) {
       if (!verify_args_exist(L"-source", 1, ai, argc))
         return 1;
       options.source = argv[++ai];
     }
-    else if (wcscmp(argv[ai], L"-out")) {
+    else if (wcscmp(argv[ai], L"-out") == 0) {
       if (!verify_args_exist(L"-out", 1, ai, argc))
         return 1;
       options.output = argv[++ai];
     }
-    else if (wcscmp(argv[ai], L"-usvfslog")) {
+    else if (wcscmp(argv[ai], L"-usvfslog") == 0) {
       if (!verify_args_exist(L"-usvfslog", 1, ai, argc))
         return 1;
       options.usvfs_log = argv[++ai];
     }
-    if (wcscmp(argv[ai], L"-recursivelyremovetempdirwithoutconfirmation"))
+    else if (wcscmp(argv[ai], L"-recursivelyremovetempdirwithoutconfirmation") == 0)
       options.force_temp_cleanup = true;
     else if (argv[ai][0] == '-') {
       wcerr << L"Unknown option " << argv[ai] << endl;
@@ -152,10 +152,10 @@ int wmain(int argc, wchar_t *argv[])
       scenario = argv[ai];
   }
 
-  path test_name = path(argv[0]).stem();
+  path test_name{ "usvfs_test" };
 
   if (scenario.empty()) {
-    print_usage(test_name);
+    print_usage(path(argv[0]).stem(), test_name);
     return 1;
   }
 

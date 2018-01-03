@@ -148,7 +148,13 @@ namespace test {
     if (!winapi::ex::wide::fileExists(dpath.c_str(), &isDir))
       return or_doesnt_exist;
 
-    return isDir && winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*").empty();
+    if (!isDir)
+      return false;
+
+    for (const auto& f : winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*"))
+      if (f.fileName != L"." && f.fileName != L"..")
+        return false;
+    return true;
   }
 
   void delete_file(const path& file)
@@ -170,7 +176,7 @@ namespace test {
     else {
       // dpath exists and its a directory:
       std::vector<std::wstring> recurse;
-      for (auto f : winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*"))
+      for (const auto& f : winapi::ex::wide::quickFindFiles(dpath.c_str(), L"*"))
       {
         if (f.fileName == L"." || f.fileName == L"..")
           continue;
@@ -216,7 +222,7 @@ namespace test {
 
     // source and destination are both directories:
     std::vector<std::wstring> recurse;
-    for (auto f : winapi::ex::wide::quickFindFiles(src_path.c_str(), L"*"))
+    for (const auto& f : winapi::ex::wide::quickFindFiles(src_path.c_str(), L"*"))
     {
       if (f.fileName == L"." || f.fileName == L"..")
         continue;

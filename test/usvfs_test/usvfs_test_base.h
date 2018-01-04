@@ -47,7 +47,7 @@ public:
   usvfs_test_base(const usvfs_test_options& options) : m_o(options) {}
   virtual ~usvfs_test_base() = default;
 
-  int run();
+  int run(const std::wstring& exe_name);
 
   // function for override:
 
@@ -67,7 +67,8 @@ public:
   virtual void verify_source_non_existance(const path& rel_path);
 
 private:
-  int run_impl();
+  int run_impl(const std::wstring& exe_name);
+  void log_settings(const std::wstring& exe_name);
   void cleanup_temp();
   void copy_fixture();
   bool postmortem_check();

@@ -431,7 +431,7 @@ bool usvfs_test_base::postmortem_check()
 
     bool is_dir = false;
     if (!winapi::ex::wide::fileExists(m_o.mount.c_str(), &is_dir) || !is_dir) {
-      fprintf(log, "  ERROR: mount directory does not exist?!");
+      fprintf(log, "  ERROR: mount directory does not exist?!\n");
       return false;
     }
     if (!winapi::ex::wide::fileExists((m_o.fixture / gold_rel).c_str(), &is_dir) || !is_dir) {
@@ -579,12 +579,12 @@ void usvfs_test_base::clean_output()
   }
 }
 
-int usvfs_test_base::run()
+int usvfs_test_base::run(const std::wstring& exe_name)
 {
   using namespace usvfs::shared;
   using namespace std;
 
-  int res = run_impl();
+  int res = run_impl(exe_name);
   try {
     clean_output();
   }
@@ -601,7 +601,7 @@ int usvfs_test_base::run()
   return res;
 }
 
-int usvfs_test_base::run_impl()
+int usvfs_test_base::run_impl(const std::wstring& exe_name)
 {
   using namespace usvfs::shared;
   using namespace std;
@@ -613,6 +613,7 @@ int usvfs_test_base::run_impl()
     auto mappings = mappings_reader(m_o.mount, m_o.source).read(m_o.mapping);
 
     cleanup_temp();
+    log_settings(exe_name);
     copy_fixture();
 
     usvfs_connector usvfs(m_o);
@@ -672,6 +673,15 @@ int usvfs_test_base::run_impl()
   return 9; // exception
 }
 
+void usvfs_test_base::log_settings(const std::wstring& exe_name)
+{
+  using namespace usvfs::shared;
+  fprintf(output(), "%s %s started with %s%s%s\n\n",
+    string_cast<std::string>(exe_name).c_str(), scenario_name(),
+    m_o.opsexe.filename().u8string().c_str(),
+    m_o.ops_options.empty() ? "" : " ", string_cast<std::string>(m_o.ops_options).c_str());
+}
+
 void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents, const wstring& additional_args)
 {
   wstring cmd = recursive ? L"-r -list" : L"-list";
@@ -710,6 +720,14 @@ void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstri
   if (commandline.find(' ') != wstring::npos && commandline.find('"') == wstring::npos) {
     commandline = L"\"" + commandline + L"\"";
     commandlog = "\"" + commandlog + "\"";
+  }
+
+  if (!m_o.mount.empty())
+  {
+    commandline += L" -basedir ";
+    commandline += m_o.mount;
+    commandlog += " -basedir ";
+    commandlog += m_o.mount.filename().u8string();
   }
 
   if (!m_o.ops_options.empty()) {
@@ -752,7 +770,7 @@ void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstri
     commandlog += string_cast<string>(postargs, CodePage::UTF8);
   }
 
-  fprintf(output(), "Spawning: %s", commandlog.c_str());
+  fprintf(output(), "Spawning: %s\n", commandlog.c_str());
   auto res = usvfs_connector::spawn(&commandline[0]);
 
   if (res)

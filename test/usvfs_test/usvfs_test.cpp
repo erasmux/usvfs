@@ -185,5 +185,5 @@ int wmain(int argc, wchar_t *argv[])
     return 3;
   }
 
-  return test->run();
+  return test->run(path(argv[0]).stem());
 }

@@ -84,7 +84,7 @@ TestW32Api::path TestW32Api::real_path(const char* abs_or_rel_path)
   char buf[1024];
   size_t res = GetFullPathNameA(abs_or_rel_path, _countof(buf), buf, NULL);
   if (!res || res >= _countof(buf))
-    throw_testWinFuncFailed("GetFullPathName", res);
+    throw_testWinFuncFailed("GetFullPathNameA", res);
   return buf;
 }
 
@@ -151,7 +151,7 @@ void TestW32Api::read_file(const path& file_path)
     CreateFileW(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
   print_result("CreateFileW", file.result_for_print(), true);
   if (!file.valid())
-    throw_testWinFuncFailed("CreateFile");
+    throw_testWinFuncFailed("CreateFileW");
 
   uint32_t total = 0;
   bool ends_with_newline = true;
@@ -279,4 +279,30 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
   }
 
   print_write_success(data, size, total);
+}
+
+void TestW32Api::delete_file(const path& file_path)
+{
+  print_operation("Deleting file", file_path);
+
+  BOOL res = DeleteFileW(file_path.c_str());
+  print_result("DeleteFileW", res, true);
+  if (!res)
+    throw_testWinFuncFailed("DeleteFileW");
+}
+
+void TestW32Api::rename_file(const path& source_path, const path& destination_path, bool replace_existing, bool allow_copy)
+{
+  print_operation(rename_operation_name(replace_existing, allow_copy), source_path, destination_path);
+
+  DWORD flags = 0;
+  if (replace_existing)
+    flags |= MOVEFILE_REPLACE_EXISTING;
+  if (allow_copy)
+    flags |= MOVEFILE_COPY_ALLOWED;
+
+  BOOL res = MoveFileExW(source_path.c_str(), destination_path.c_str(), flags);
+  print_result("MoveFileExW", res, true);
+  if (!res)
+    throw_testWinFuncFailed("MoveFileExW");
 }

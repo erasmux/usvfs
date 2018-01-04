@@ -111,6 +111,13 @@ typedef struct _FILE_END_OF_FILE_INFORMATION {
   LARGE_INTEGER EndOfFile;
 } FILE_END_OF_FILE_INFORMATION, *PFILE_END_OF_FILE_INFORMATION;
 
+typedef struct _FILE_RENAME_INFORMATION {
+  BOOLEAN ReplaceIfExists;
+  HANDLE  RootDirectory;
+  ULONG   FileNameLength;
+  WCHAR   FileName[1];
+} FILE_RENAME_INFORMATION, *PFILE_RENAME_INFORMATION;
+
 extern "C"
 __kernel_entry NTSTATUS
 NTAPI
@@ -167,4 +174,11 @@ NtSetInformationFile(
   IN PVOID FileInformation,
   IN ULONG Length,
   IN MY_FILE_INFORMATION_CLASS FileInformationClass
+);
+
+extern "C"
+__kernel_entry NTSTATUS
+NTAPI
+NtDeleteFile(
+  IN POBJECT_ATTRIBUTES ObjectAttributes
 );

@@ -3,6 +3,7 @@
 #include <test_helpers.h>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -352,4 +353,67 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   }
 
   print_write_success(data, size, total);
+}
+
+void TestNtApi::delete_file(const path& file_path)
+{
+  print_operation("Deleting file", file_path);
+
+  UNICODE_STRING unicode_path;
+  RtlInitUnicodeString(&unicode_path, file_path.c_str());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+  NTSTATUS status =
+    NtDeleteFile(&attributes);
+  print_result("NtCreateFile", status);
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtDeleteFile", status);
+}
+
+void TestNtApi::rename_file(const path& source_path, const path& destination_path, bool replace_existing, bool allow_copy)
+{
+  if (allow_copy)
+    throw test::FuncFailed("rename_file", "ntapi does not support file move");
+
+  print_operation(rename_operation_name(replace_existing, allow_copy), source_path, destination_path);
+
+  UNICODE_STRING unicode_path;
+  RtlInitUnicodeString(&unicode_path, source_path.c_str());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &unicode_path, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+  SafeHandle file(this);
+  IO_STATUS_BLOCK iosb;
+  NTSTATUS status =
+    NtCreateFile(
+      file, FILE_READ_ATTRIBUTES|DELETE|SYNCHRONIZE, &attributes, &iosb, NULL, FILE_ATTRIBUTE_NORMAL,
+      FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+      FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+  print_result("NtCreateFile", status);
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtCreateFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtCreateFile", "bad iosb.Status", iosb.Status);
+
+  bool dest_full_path = source_path.parent_path() != destination_path.parent_path();
+  std::wstring dest = dest_full_path ? destination_path : destination_path.filename();
+  std::vector<char> buf(sizeof(FILE_RENAME_INFORMATION) + sizeof(wchar_t)*dest.length());
+  FILE_RENAME_INFORMATION* rename = reinterpret_cast<FILE_RENAME_INFORMATION*>(buf.data());
+  rename->ReplaceIfExists = replace_existing ? TRUE : FALSE;
+  rename->FileNameLength = sizeof(wchar_t)*dest.length();
+  memcpy(&rename->FileName[0], dest.data(), sizeof(wchar_t)*dest.length());
+
+  status =
+    NtSetInformationFile(file, &iosb, rename, buf.size(), MyFileRenameInformation);
+  print_result("NtSetInformationFile", status, false, dest_full_path ? "rename full path" : "rename filename");
+
+  if (!NT_SUCCESS(status))
+    throw test::FuncFailed("NtSetInformationFile", status);
+  if (!NT_SUCCESS(iosb.Status))
+    throw test::FuncFailed("NtSetInformationFile", "bad iosb.Status", iosb.Status);
 }

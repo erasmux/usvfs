@@ -52,12 +52,18 @@ public:
   enum class write_mode { manual_truncate, truncate, create, overwrite, append };
   virtual void write_file(const path& file_path, const void* data, std::size_t size, bool add_new_line, write_mode mode, bool rw_access = false) = 0;
 
+  virtual void delete_file(const path& file_path) = 0;
+
+  virtual void rename_file(const path& source_path, const path& destination_path, bool replace_existing, bool allow_copy) = 0;
+
 protected:
   FILE* output() { return m_output; }
   static const char* write_operation_name(write_mode mode);
+  static const char* rename_operation_name(bool replace_existing, bool allow_copy);
 
 public: // mainly for derived class (but also used by helper classes like SafeHandle so public)
-  void print_operation(const char* operation, path target);
+  void print_operation(const char* operation, const path& target);
+  void print_operation(const char* operation, const path& source, const path& target);
   void print_result(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr, bool hide_result = false);
   void print_error(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
   void print_write_success(const void* data, std::size_t size, std::size_t written);

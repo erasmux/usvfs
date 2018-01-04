@@ -54,10 +54,25 @@ const char* TestFileSystem::write_operation_name(write_mode mode)
   return "Unknown write operation?!";
 }
 
-void TestFileSystem::print_operation(const char* operation, path target)
+//static
+const char* TestFileSystem::rename_operation_name(bool replace_existing, bool allow_copy)
+{
+  if (allow_copy)
+    return replace_existing ? "Moving file over" : "Moving file";
+  else
+    return replace_existing ? "Renaming file over" : "Renaming file";
+}
+
+void TestFileSystem::print_operation(const char* operation, const path& target)
 {
   if (m_output)
     fprintf(m_output, "# (%s) %s {%s}\n", id(), operation, relative_path(target).u8string().c_str());
+}
+
+void TestFileSystem::print_operation(const char* operation, const path& source, const path& target)
+{
+  if (m_output)
+    fprintf(m_output, "# (%s) %s {%s} {%s}\n", id(), operation, relative_path(source).u8string().c_str(), relative_path(target).u8string().c_str());
 }
 
 static inline void print_op_with_result(FILE* output, const char* prefix, const char* operation, const uint32_t* result, DWORD* last_error, const char* opt_arg)
@@ -78,9 +93,10 @@ void TestFileSystem::print_result(const char* operation, uint32_t result, bool w
 {
   if (m_output)
   {
-    DWORD last_error = with_last_error ? GetLastError() : 0;
+    DWORD last_error = GetLastError();
     std::string prefix = "# ("; prefix += id(); prefix += ")   ";
     print_op_with_result(m_output, prefix.c_str(), operation, hide_result ? nullptr : &result, with_last_error ? &last_error : nullptr, opt_arg);
+    SetLastError(last_error);
   }
 }
 

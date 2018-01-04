@@ -22,6 +22,11 @@ void print_usage(const char* myname) {
   fprintf(stderr, " -read <file>        : reads the given file and outputs the results.\n");
   fprintf(stderr, " -overwrite <file> <string> : overwrites the file at the given path with the given line (creating directories if in recursive mode).\n");
   fprintf(stderr, " -rewrite <file> <string> : rewrites the file at the given path with the given line (fails if file doesn't exist; uses read/write access).\n");
+  fprintf(stderr, " -delete <file>      : deletes the given file.\n");
+  fprintf(stderr, " -rename <src> <dst> : renames the given file.\n");
+  fprintf(stderr, " -renameover <src> <dst> : renames the given file (replacing existing destination).\n");
+  fprintf(stderr, " -move <src> <dst>   : moves the given file (not supported by ntapi).\n");
+  fprintf(stderr, " -moveover <src> <dst> : moves the given file (replacing existing destination; not supported by ntapi).\n");
   fprintf(stderr, " -debug              : shows a message box and wait for a debugger to connect.\n");
   fprintf(stderr, "\nsupported options:\n");
   fprintf(stderr, " -out <file>         : file to log output to (use \"-\" for the stdout; otherwise path to output should exist).\n");
@@ -116,16 +121,22 @@ public:
 
   void list(const char* dir, bool read_files)
   {
+    if (debug_pending()) __debugbreak();
+
     list_impl(m_api->real_path(dir), read_files);
   }
 
   void read(const char* path)
   {
+    if (debug_pending()) __debugbreak();
+
     m_api->read_file(m_api->real_path(path));
   }
 
   void overwrite(const char* path, const char* value)
   {
+    if (debug_pending()) __debugbreak();
+
     auto real = m_api->real_path(path);
     if (m_recursive)
       try {
@@ -141,6 +152,8 @@ public:
 
   void rewrite(const char* path, const char* value)
   {
+    if (debug_pending()) __debugbreak();
+
     auto real = m_api->real_path(path);
     // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
     m_api->write_file(real, value, strlen(value), false, TestFileSystem::write_mode::manual_truncate, true);
@@ -148,12 +161,33 @@ public:
     m_api->write_file(real, "\n", 1, false, TestFileSystem::write_mode::append);
   }
 
+  void deletef(const char* path)
+  {
+    if (debug_pending()) __debugbreak();
+
+    m_api->delete_file(m_api->real_path(path));
+  }
+
+  void rename(const char* source, const char* destination, bool replace_existing, bool allow_copy)
+  {
+    if (debug_pending()) __debugbreak();
+
+    m_api->rename_file(m_api->real_path(source), m_api->real_path(destination), replace_existing, allow_copy);
+  }
+
   void debug()
   {
+    m_debug_pending = true;
+  }
+
+  bool debug_pending()
+  {
+    if (!m_debug_pending)
+      return false;
+    m_debug_pending = false;
     if (!IsDebuggerPresent())
       MessageBoxA(NULL, "Connect a debugger and press OK to trigger a breakpoint", "DEBUG", 0);
-    if (IsDebuggerPresent())
-      __debugbreak();
+    return IsDebuggerPresent();
   }
 
   // Traversal:
@@ -187,6 +221,7 @@ private:
   FILE* m_output;
   bool m_cleanoutput = false;
   bool m_recursive = false;
+  bool m_debug_pending = false;
 
   TestFileSystem* m_api;
   static TestW32Api w32api;
@@ -281,6 +316,22 @@ int main(int argc, char *argv[])
       }
       else if (strcmp(argv[ai], "-rewrite") == 0 && verify_args_exist("-rewrite", 2, ai, argc)) {
         executer.rewrite(argv[ai + 1], argv[ai + 2]);
+        ++++ai;
+        found_commands = true;
+      }
+      else if (strcmp(argv[ai], "-delete") == 0 && verify_args_exist("-delete", 1, ai, argc))
+      {
+        executer.deletef(argv[++ai]);
+        found_commands = true;
+      }
+      else if (strcmp(argv[ai], "-rename") == 0 && verify_args_exist("-rename", 2, ai, argc)
+        || strcmp(argv[ai], "-renameover") == 0 && verify_args_exist("-renameover", 2, ai, argc)
+        || strcmp(argv[ai], "-move") == 0 && verify_args_exist("-move", 2, ai, argc)
+        || strcmp(argv[ai], "-moveover") == 0 && verify_args_exist("-moveover", 2, ai, argc))
+      {
+        bool move = argv[ai][1] == 'm';
+        bool over = argv[ai][move ? 5 : 7] == 'o';
+        executer.rename(argv[ai + 1], argv[ai + 2], over, move);
         ++++ai;
         found_commands = true;
       }

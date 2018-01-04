@@ -298,7 +298,7 @@ public:
     while (std::isspace(*in)) ++in;
     auto end = in;
     end += strlen(end);
-    while (end > in && std::isspace(*--end));
+    while (end > in && std::isspace(*(end-1))) --end;
     return usvfs::shared::string_cast<wstring>(string(in, end), usvfs::shared::CodePage::UTF8);
   }
 
@@ -338,9 +338,9 @@ void usvfs_test_base::cleanup_temp()
       throw FuncFailed("cleanup_temp", "temp exists but is a file", m_o.temp.u8string().c_str());
   }
   else {
-    std::vector<std::wstring> cleanfiles;
-    std::vector<std::wstring> cleandirs;
-    std::vector<std::wstring> otherdirs;
+    std::vector<wstring> cleanfiles;
+    std::vector<wstring> cleandirs;
+    std::vector<wstring> otherdirs;
     bool output_file = false;
     for (auto f : quickFindFiles(m_o.temp.c_str(), L"*"))
       if (f.fileName == L"." || f.fileName == L"..")
@@ -453,11 +453,11 @@ int usvfs_test_base::run()
   catch (const exception& e)
   {
     try {
-      wcerr << "ERROR: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+      wcerr << "ERROR: " << string_cast<wstring>(e.what(), CodePage::UTF8).c_str() << endl;
       fprintf(output(), "ERROR: %s\n", e.what());
     }
     catch (const exception& e) {
-      wcerr << "ERROR^2: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+      wcerr << "ERROR^2: " << string_cast<wstring>(e.what(), CodePage::UTF8).c_str() << endl;
     }
     catch (...) {
       wcerr << "ERROR^2: unknown exception" << endl;
@@ -470,7 +470,7 @@ int usvfs_test_base::run()
       fprintf(output(), "ERROR: unknown exception\n");
     }
     catch (const exception& e) {
-      wcerr << "ERROR^2: " << string_cast<std::wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+      wcerr << "ERROR^2: " << string_cast<wstring>(e.what(), CodePage::UTF8).c_str() << endl;
     }
     catch (...) {
       wcerr << "ERROR^2: unknown exception" << endl;
@@ -482,38 +482,38 @@ int usvfs_test_base::run()
   return 9; // exception
 }
 
-void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents)
+void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents, const wstring& additional_args)
 {
-  std::wstring cmd = recursive ? L"-r -list" : L"-list";
+  wstring cmd = recursive ? L"-r -list" : L"-list";
   if (with_contents)
     cmd += L"contents";
-  run_ops(cmd, rel_path);
+  run_ops(cmd, rel_path, additional_args);
 }
 
-void usvfs_test_base::ops_read(const path& rel_path)
+void usvfs_test_base::ops_read(const path& rel_path, const wstring& additional_args)
 {
-  run_ops(L"-read", rel_path);
+  run_ops(L"-read", rel_path, additional_args);
 }
 
-void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents)
-{
-  using namespace usvfs::shared;
-  run_ops(L"-rewrite", rel_path,
-    L"\""+string_cast<std::wstring>(contents, CodePage::UTF8)+L"\"");
-}
-
-void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive)
+void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents, const wstring& additional_args)
 {
   using namespace usvfs::shared;
-  run_ops(recursive ? L"-r overwrite" : L"-overwrite", rel_path,
-    L"\""+string_cast<std::wstring>(contents, CodePage::UTF8)+L"\"");
+  run_ops(L"-rewrite", rel_path, additional_args,
+    L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::run_ops(std::wstring preargs, const path& rel_path, const std::wstring& postargs)
+void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive, const wstring& additional_args)
+{
+  using namespace usvfs::shared;
+  run_ops(recursive ? L"-r overwrite" : L"-overwrite", rel_path, additional_args,
+    L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
+}
+
+void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs)
 {
   using namespace usvfs::shared;
   using string = std::string;
-  using wstring = std::wstring;
+  using wstring = wstring;
 
   string commandlog = test::path(m_o.opsexe).filename().u8string();
   wstring commandline = m_o.opsexe;
@@ -533,6 +533,13 @@ void usvfs_test_base::run_ops(std::wstring preargs, const path& rel_path, const 
   commandline += m_o.output;
   commandlog += " -cout+ ";
   commandlog += m_o.output.filename().u8string();
+
+  if (!additional_args.empty()) {
+    commandline += L" ";
+    commandline += additional_args;
+    commandlog += " ";
+    commandlog += string_cast<string>(additional_args, CodePage::UTF8);
+  }
 
   if (!preargs.empty()) {
     commandline += L" ";

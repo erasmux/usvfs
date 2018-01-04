@@ -39,6 +39,7 @@ public:
   static constexpr auto MOUNT_LABEL = "mount:";
   static constexpr auto SOURCE_LABEL = "source:";
 
+  using wstring = std::wstring;
   using path = test::path;
 
   // options object should outlive this object.
@@ -54,10 +55,10 @@ public:
 
   // helpers for derived scenarios:
 
-  virtual void ops_list(const path& rel_path, bool recursive, bool with_contents);
-  virtual void ops_read(const path& rel_path);
-  virtual void ops_rewrite(const path& rel_path, const char* contents);
-  virtual void ops_overwrite(const path& rel_path, const char* contents, bool recursive);
+  virtual void ops_list(const path& rel_path, bool recursive, bool with_contents, const wstring& additional_args = wstring());
+  virtual void ops_read(const path& rel_path, const wstring& additional_args = wstring());
+  virtual void ops_rewrite(const path& rel_path, const char* contents, const wstring& additional_args = wstring());
+  virtual void ops_overwrite(const path& rel_path, const char* contents, bool recursive, const wstring& additional_args = wstring());
 
   virtual void verify_mount_file(const path& rel_path, const char* contents);
   virtual void verify_mount_non_existance(const path& rel_path);
@@ -70,7 +71,7 @@ private:
   bool postmortem_check();
 
   test::ScopedFILE output();
-  void run_ops(std::wstring preargs, const path& rel_path, const std::wstring& postargs = std::wstring());
+  void run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs = wstring());
   bool verify_file(const path& file, const char* contents);
 
   const usvfs_test_options& m_o;

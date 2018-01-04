@@ -434,14 +434,18 @@ bool usvfs_test_base::postmortem_check()
       fprintf(log, "ERROR: postmortem check failed!\n");
       return false;
     }
+
+    fprintf(log, "postmortem check successfull.\n");
   } // close output before comparing it
+
+  // don't print anything more to the output (except maybe errors),
+  // so that the final output can be copied as is to the fixtures (when updating the golden version)
 
   if (!test::compare_files(gold_output, m_o.output, false)) {
     fprintf(output(), "ERROR: output does not match gold output: %s\n", m_o.output.filename().u8string().c_str());
     return false;
   }
 
-  fprintf(output(), "postmortem check successfull.\n");
   return true;
 }
 

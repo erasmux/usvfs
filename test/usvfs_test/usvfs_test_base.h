@@ -71,6 +71,7 @@ private:
   void cleanup_temp();
   void copy_fixture();
   bool postmortem_check();
+  bool recursive_compare_dirs(path mount_rel, path gold_base, FILE* log);
   void clean_output();
 
   test::ScopedFILE output();

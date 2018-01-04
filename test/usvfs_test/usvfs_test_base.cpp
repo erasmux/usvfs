@@ -4,6 +4,7 @@
 #include <stringcast.h>
 #include <usvfs.h>
 #include <vector>
+#include <unordered_set>
 #include <cctype>
 #include <thread>
 #include <future>
@@ -404,6 +405,114 @@ void usvfs_test_base::copy_fixture()
   recursive_copy_files(fsource, m_o.source, false);
 }
 
+bool usvfs_test_base::postmortem_check()
+{
+  path gold_output = m_o.fixture / m_o.output.filename();
+
+  {
+    const auto& log = output();
+
+    path gold_rel = MOUNT_DIR;
+
+    bool is_dir = false;
+    if (!winapi::ex::wide::fileExists(m_o.mount.c_str(), &is_dir) || !is_dir) {
+      fprintf(log, "  ERROR: mount directory does not exist?!");
+      return false;
+    }
+    if (!winapi::ex::wide::fileExists((m_o.fixture / gold_rel).c_str(), &is_dir) || !is_dir) {
+      fprintf(log, "  ERROR: fixtures golden mount does not exist: %s\n", gold_rel.u8string().c_str());
+      return false;
+    }
+    if (!winapi::ex::wide::fileExists(gold_output.c_str(), &is_dir) || is_dir) {
+      fprintf(log, "  ERROR: golden scenario output does not exist: %s\n", gold_output.filename().u8string().c_str());
+      return false;
+    }
+
+    fprintf(log, "postmortem check against original fixtures %s:\n", gold_rel.u8string().c_str());
+    if (!recursive_compare_dirs(path(), m_o.fixture / gold_rel, log))
+    {
+      fprintf(log, "ERROR: postmortem check failed!\n");
+      return false;
+    }
+  } // close output before comparing it
+
+  if (!test::compare_files(gold_output, m_o.output, false)) {
+    fprintf(output(), "ERROR: output does not match gold output: %s\n", m_o.output.filename().u8string().c_str());
+    return false;
+  }
+
+  fprintf(output(), "postmortem check successfull.\n");
+  return true;
+}
+
+bool usvfs_test_base::recursive_compare_dirs(path mount_rel, path gold_base, FILE* log)
+{
+  path mount_full = m_o.mount / mount_rel;
+  path gold_full = gold_base / mount_rel;
+
+  std::unordered_set<std::wstring> gold_dirs;
+  std::unordered_set<std::wstring> gold_files;
+  for (const auto& f : winapi::ex::wide::quickFindFiles(gold_full.c_str(), L"*"))
+  {
+    if (f.fileName == L"." || f.fileName == L"..")
+      continue;
+    if (f.attributes & FILE_ATTRIBUTE_DIRECTORY)
+      gold_dirs.insert(f.fileName);
+    else
+      gold_files.insert(f.fileName);
+  }
+
+  bool all_good = true;
+
+  std::vector<std::wstring> recurse;
+  for (const auto& f : winapi::ex::wide::quickFindFiles(mount_full.c_str(), L"*"))
+  {
+    if (f.fileName == L"." || f.fileName == L"..")
+      continue;
+    if (f.attributes & FILE_ATTRIBUTE_DIRECTORY) {
+      const auto& find = gold_dirs.find(f.fileName);
+      if (find != gold_dirs.end()) {
+        gold_dirs.erase(find);
+        recurse.push_back(f.fileName);
+      }
+      else {
+        fprintf(log, "  unexpected directory found: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+        all_good = false;
+      }
+    }
+    else {
+      const auto& find = gold_files.find(f.fileName);
+      if (find != gold_files.end()) {
+        gold_files.erase(find);
+        if (!test::compare_files(gold_full / f.fileName, mount_full / f.fileName, false))
+        {
+          fprintf(log, "  file contents differs: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+          all_good = false;
+        }
+      }
+      else {
+        fprintf(log, "  unexpected file found: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+        all_good = false;
+      }
+    }
+  }
+
+  for (auto d : gold_dirs) {
+    fprintf(log, "  expected directory not found: %s%s\n", MOUNT_LABEL, (mount_rel / d).u8string().c_str());
+    all_good = false;
+  }
+
+  for (auto f : gold_files) {
+    fprintf(log, "  expected file not found: %s%s\n", MOUNT_LABEL, (mount_rel / f).u8string().c_str());
+    all_good = false;
+  }
+
+  for (auto r : recurse)
+    all_good &= recursive_compare_dirs(mount_rel / r, gold_base, log);
+
+  return all_good;
+}
+
 test::ScopedFILE usvfs_test_base::output()
 {
   test::ScopedFILE log;
@@ -451,14 +560,6 @@ void usvfs_test_base::clean_output()
   }
 }
 
-
-bool usvfs_test_base::postmortem_check()
-{
-  // TODO: compare source with fixture source (no changes should be made to source)
-  // TODO: compare mount with the postmortem mount
-  return true;
-}
-
 int usvfs_test_base::run()
 {
   using namespace usvfs::shared;
@@ -474,6 +575,10 @@ int usvfs_test_base::run()
   catch (...) {
     wcerr << "CERROR: unknown exception" << endl;
   }
+  if (!res)
+    wcout << "scenario " << scenario_name() << " PASSED." << endl;
+  else
+    wcerr << "scenario " << scenario_name() << " FAILED!" << endl;
   return res;
 }
 
@@ -502,7 +607,7 @@ int usvfs_test_base::run_impl()
     {
       const auto& log = output();
       if (res)
-        fprintf(log, "\nscenario ended successfully!\n");
+        fprintf(log, "\nscenario ended successfully!\n\n");
       else
         fprintf(log, "\nscenario failed miserably.\n");
     }

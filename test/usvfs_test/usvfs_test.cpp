@@ -7,7 +7,7 @@
 
 void print_usage(const std::wstring& exe_name, const std::wstring& test_name) {
   using namespace std;
-  wcerr << "usage: " << exe_name << " [<options>] <scenario>" << endl;
+  wcerr << "usage: " << exe_name << " [<options>] <scenario>[:<label>]" << endl;
   wcerr << "available options:" << endl;
   wcerr << " -ops32           : force 32bit file opertations process (default is same bitness)." << endl;
   wcerr << " -ops64           : force 64bit file opertations process (default is same bitness)." << endl;
@@ -15,13 +15,14 @@ void print_usage(const std::wstring& exe_name, const std::wstring& test_name) {
   wcerr << " -opsarg <arg>    : adds argument to the start of all file operations." << endl;
   wcerr << " -fixture <dir>   : fixture dir (default is test\\fixtures\\" << test_name << "\\<scenario>)." << endl;
   wcerr << " -mapping <file>  : mapping file (default is <fixture dir>\\vfs_mappings.txt)." << endl;
-  wcerr << " -temp <dir>      : temp dir (default is test\\temp\\" << test_name << "\\<scenario>)." << endl;
+  wcerr << " -temp <dir>      : temp dir (default is test\\temp\\" << test_name << "\\<scenario>_<label>)." << endl;
   wcerr << " -mount <dir>     : mount dir (default is <temp dir>\\mount)." << endl;
   wcerr << " -source <dir>    : source dir (default is <temp dir>\\source)." << endl;
-  wcerr << " -out <file>      : output file (default is <temp dir>\\<scenario>.log)." << endl;
-  wcerr << " -usvfslog <file> : output file (default is <temp dir>\\<scenario>_usvfs.log)." << endl;
+  wcerr << " -out <file>      : output file (default is <temp dir>\\<scenario>_<label>.log)." << endl;
+  wcerr << " -usvfslog <file> : output file (default is <temp dir>\\<scenario>_<label>_usvfs.log)." << endl;
   wcerr << " -forcetemprecursivedelete : decimate temp dir even if doesn't look like a temp dir." << endl;
   wcerr << endl;
+  wcerr << "note: if <label> is ommited the current platform (x86/x64) is used." << endl;
   wcerr << "note: mount and source dirs should not exist or be empty directories. if either of them" << endl;
   wcerr << "is not given, the temp dir is first recusrively deleted. to protect against accidents a" << endl;
   wcerr << "heuristic is used to verify the temp dir only has entires which this test creates." << endl;
@@ -73,6 +74,7 @@ int wmain(int argc, wchar_t *argv[])
   using namespace std;
   using namespace test;
 
+  const wchar_t* label = nullptr;
   wstring scenario;
   path temp;
   usvfs_test_options options;
@@ -140,16 +142,24 @@ int wmain(int argc, wchar_t *argv[])
       wcerr << L"Unknown option " << argv[ai] << endl;
       return 1;
     }
-    else if (!argv[ai][0]) {
-      wcerr << L"Scenario name can not be empty!" << endl;
-      return 1;
-    }
     else if (!scenario.empty()) {
-      wcerr << L"Multiple scenarios can be specified: " << scenario.c_str() << L", " << argv[ai] << endl;
+      wcerr << L"Multiple scenarios can not be specified: " << scenario.c_str() << L", " << argv[ai] << endl;
       return 1;
     }
-    else
-      scenario = argv[ai];
+    else {
+      label = wcschr(argv[ai], ':');
+      if (label) {
+        scenario = std::wstring(static_cast<const wchar_t*>(argv[ai]), label);
+        ++label; // skip the ':'
+      }
+      else
+        scenario = argv[ai];
+
+      if (scenario.empty()) {
+        wcerr << L"Scenario name can not be empty!" << endl;
+        return 1;
+      }
+    }
   }
 
   path test_name{ "usvfs_test" };
@@ -159,7 +169,7 @@ int wmain(int argc, wchar_t *argv[])
     return 1;
   }
 
-  options.fill_defaults(test_name, scenario);
+  options.fill_defaults(test_name, scenario, label);
 
   unique_ptr<usvfs_test_base> test{
     find_scenario(usvfs::shared::string_cast<std::string>(scenario, usvfs::shared::CodePage::UTF8), options) };

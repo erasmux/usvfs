@@ -14,15 +14,29 @@
 
 // usvfs_test_options class:
 
-void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring& scenario)
+void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring& scenario, const wchar_t* label)
 {
   using namespace test;
 
+  std::wstring lbl;
+  if (label)
+    lbl = label;
+
 #ifdef _WIN64
   set_ops64();
+  if (!label)
+    lbl = L"x64";
 #else
   set_ops32();
+  if (!label)
+    lbl = L"x86";
 #endif
+
+  std::wstring scenario_label = scenario;
+  if (!lbl.empty()) {
+    scenario_label += L"_";
+    scenario_label += lbl;
+  }
 
   if (fixture.empty())
     fixture = path_of_test_fixtures(test_name / scenario);
@@ -30,8 +44,9 @@ void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring
   if (mapping.empty())
     mapping = fixture / DEFAULT_MAPPING;
 
-  if (temp.empty())
-    temp = path_of_test_temp(test_name / scenario);
+  if (temp.empty()) {
+    temp = path_of_test_temp(test_name / scenario_label);
+  }
 
   if (mount.empty()) {
     mount = temp / MOUNT_DIR;
@@ -44,12 +59,12 @@ void usvfs_test_options::fill_defaults(const path& test_name, const std::wstring
   }
 
   if (output.empty()) {
-    output = temp / scenario;
+    output = temp / scenario_label;
     output += ".log";
   }
 
   if (usvfs_log.empty()) {
-    usvfs_log = temp / scenario;
+    usvfs_log = temp / scenario_label;
     usvfs_log += "_usvfs.log";
   }
 }

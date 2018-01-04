@@ -13,7 +13,7 @@ public:
   using path = test::path;
 
   // fills any values not set (or set to an empty value) to their default value
-  void fill_defaults(const path& test_name, const std::wstring& scenario);
+  void fill_defaults(const path& test_name, const std::wstring& scenario, const wchar_t* label);
 
   void set_ops32(); // sets opsexe iff opsexe is empty
   void set_ops64(); // sets opsexe iff opsexe is empty

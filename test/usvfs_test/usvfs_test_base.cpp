@@ -427,15 +427,26 @@ bool usvfs_test_base::postmortem_check()
   {
     const auto& log = output();
 
-    path gold_rel = MOUNT_DIR;
+    path mount_gold = MOUNT_DIR;
+    mount_gold += POSTMORTEM_SUFFIX;
+    path source_gold = SOURCE_DIR;
+    source_gold += POSTMORTEM_SUFFIX;
 
     bool is_dir = false;
     if (!winapi::ex::wide::fileExists(m_o.mount.c_str(), &is_dir) || !is_dir) {
       fprintf(log, "  ERROR: mount directory does not exist?!\n");
       return false;
     }
-    if (!winapi::ex::wide::fileExists((m_o.fixture / gold_rel).c_str(), &is_dir) || !is_dir) {
-      fprintf(log, "  ERROR: fixtures golden mount does not exist: %s\n", gold_rel.u8string().c_str());
+    if (!winapi::ex::wide::fileExists(m_o.source.c_str(), &is_dir) || !is_dir) {
+      fprintf(log, "  ERROR: source directory does not exist?!\n");
+      return false;
+    }
+    if (!winapi::ex::wide::fileExists((m_o.fixture / mount_gold).c_str(), &is_dir) || !is_dir) {
+      fprintf(log, "  ERROR: fixtures golden mount does not exist: %s\n", mount_gold.u8string().c_str());
+      return false;
+    }
+    if (!winapi::ex::wide::fileExists((m_o.fixture / source_gold).c_str(), &is_dir) || !is_dir) {
+      fprintf(log, "  ERROR: fixtures golden source does not exist: %s\n", mount_gold.u8string().c_str());
       return false;
     }
     if (!winapi::ex::wide::fileExists(gold_output.c_str(), &is_dir) || is_dir) {
@@ -443,10 +454,19 @@ bool usvfs_test_base::postmortem_check()
       return false;
     }
 
-    fprintf(log, "postmortem check against original fixtures %s:\n", gold_rel.u8string().c_str());
-    if (!recursive_compare_dirs(path(), m_o.fixture / gold_rel, log))
+    fprintf(log, "postmortem check of %s against golden %s...\n",
+      m_o.mount.filename().u8string().c_str(), mount_gold.u8string().c_str());
+    if (!recursive_compare_dirs(path(), m_o.fixture / mount_gold, m_o.mount, log))
     {
-      fprintf(log, "ERROR: postmortem check failed!\n");
+      fprintf(log, "ERROR: postmortem mount check failed!\n");
+      return false;
+    }
+
+    fprintf(log, "postmortem check of %s against golden %s...\n",
+      m_o.source.filename().u8string().c_str(), source_gold.u8string().c_str());
+    if (!recursive_compare_dirs(path(), m_o.fixture / source_gold, m_o.source, log))
+    {
+      fprintf(log, "ERROR: postmortem source check failed!\n");
       return false;
     }
 
@@ -464,10 +484,10 @@ bool usvfs_test_base::postmortem_check()
   return true;
 }
 
-bool usvfs_test_base::recursive_compare_dirs(path mount_rel, path gold_base, FILE* log)
+bool usvfs_test_base::recursive_compare_dirs(path rel_path, path gold_base, path result_base, FILE* log)
 {
-  path mount_full = m_o.mount / mount_rel;
-  path gold_full = gold_base / mount_rel;
+  path result_full = result_base / rel_path;
+  path gold_full = gold_base / rel_path;
 
   std::unordered_set<std::wstring> gold_dirs;
   std::unordered_set<std::wstring> gold_files;
@@ -484,7 +504,7 @@ bool usvfs_test_base::recursive_compare_dirs(path mount_rel, path gold_base, FIL
   bool all_good = true;
 
   std::vector<std::wstring> recurse;
-  for (const auto& f : winapi::ex::wide::quickFindFiles(mount_full.c_str(), L"*"))
+  for (const auto& f : winapi::ex::wide::quickFindFiles(result_full.c_str(), L"*"))
   {
     if (f.fileName == L"." || f.fileName == L"..")
       continue;
@@ -495,7 +515,7 @@ bool usvfs_test_base::recursive_compare_dirs(path mount_rel, path gold_base, FIL
         recurse.push_back(f.fileName);
       }
       else {
-        fprintf(log, "  unexpected directory found: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+        fprintf(log, "  unexpected directory found: %s%s\n", MOUNT_LABEL, (rel_path / f.fileName).u8string().c_str());
         all_good = false;
       }
     }
@@ -503,31 +523,31 @@ bool usvfs_test_base::recursive_compare_dirs(path mount_rel, path gold_base, FIL
       const auto& find = gold_files.find(f.fileName);
       if (find != gold_files.end()) {
         gold_files.erase(find);
-        if (!test::compare_files(gold_full / f.fileName, mount_full / f.fileName, false))
+        if (!test::compare_files(gold_full / f.fileName, result_full / f.fileName, false))
         {
-          fprintf(log, "  file contents differs: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+          fprintf(log, "  file contents differs: %s%s\n", MOUNT_LABEL, (rel_path / f.fileName).u8string().c_str());
           all_good = false;
         }
       }
       else {
-        fprintf(log, "  unexpected file found: %s%s\n", MOUNT_LABEL, (mount_rel / f.fileName).u8string().c_str());
+        fprintf(log, "  unexpected file found: %s%s\n", MOUNT_LABEL, (rel_path / f.fileName).u8string().c_str());
         all_good = false;
       }
     }
   }
 
   for (auto d : gold_dirs) {
-    fprintf(log, "  expected directory not found: %s%s\n", MOUNT_LABEL, (mount_rel / d).u8string().c_str());
+    fprintf(log, "  expected directory not found: %s%s\n", MOUNT_LABEL, (rel_path / d).u8string().c_str());
     all_good = false;
   }
 
   for (auto f : gold_files) {
-    fprintf(log, "  expected file not found: %s%s\n", MOUNT_LABEL, (mount_rel / f).u8string().c_str());
+    fprintf(log, "  expected file not found: %s%s\n", MOUNT_LABEL, (rel_path / f).u8string().c_str());
     all_good = false;
   }
 
   for (auto r : recurse)
-    all_good &= recursive_compare_dirs(mount_rel / r, gold_base, log);
+    all_good &= recursive_compare_dirs(rel_path / r, gold_base, result_base, log);
 
   return all_good;
 }

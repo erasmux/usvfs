@@ -39,6 +39,7 @@ public:
   static constexpr auto MOUNT_LABEL = "mount:";
   static constexpr auto SOURCE_LABEL = "source:";
   static constexpr auto OUTPUT_CLEAN_SUFFIX = L"_clean";
+  static constexpr auto POSTMORTEM_SUFFIX = L".postmortem";
 
   using wstring = std::wstring;
   using path = test::path;
@@ -72,7 +73,7 @@ private:
   void cleanup_temp();
   void copy_fixture();
   bool postmortem_check();
-  bool recursive_compare_dirs(path mount_rel, path gold_base, FILE* log);
+  bool recursive_compare_dirs(path rel_path, path gold_base, path result_base, FILE* log);
   void clean_output();
 
   test::ScopedFILE output();

@@ -9,6 +9,7 @@
 #include <future>
 #include <chrono>
 #include <iostream>
+#include <cerrno>
 
 // usvfs_test_options class:
 
@@ -98,6 +99,7 @@ public:
   }
 
   ~usvfs_connector() {
+    DisconnectVFS();
     m_exit_signal.set_value();
     m_log_thread.join();
   }
@@ -208,6 +210,11 @@ public:
         wait_for = std::chrono::milliseconds(0);
     } while (m_exit_future.wait_for(wait_for) == std::future_status::timeout);
 
+    while (GetLogMessages(buf, size, false)) {
+      fwrite(buf, 1, strlen(buf), m_usvfs_log);
+      fwrite("\n", 1, 1, m_usvfs_log);
+    }
+
     fprintf(m_usvfs_log, "usvfs log closed.\n");
     m_usvfs_log.close();
   }
@@ -269,7 +276,10 @@ public:
         throw test::FuncFailed("mappings_reader::read", "invalid mappings file line", line);
       else {
         const auto& source_rel = trimmed_wide_string(line);
-        mappings.push_back(mapping(m_nesting, m_source_base / source_rel, m_mount));
+        auto mount = m_mount;
+        if (m_nesting == map_type::file);
+          mount /= path(source_rel).filename();
+        mappings.push_back(mapping(m_nesting, m_source_base / source_rel, mount));
       }
     }
 
@@ -389,7 +399,7 @@ void usvfs_test_base::copy_fixture()
   if (fileExists(m_o.source.c_str(), &isDir))
     throw FuncFailed("copy_fixture", "source dir already exists", m_o.source.u8string().c_str());
 
-  std::wcout << "Copying fixture: " << m_o.fixture.c_str() << std::endl;
+  std::wcout << "Copying fixture: " << m_o.fixture << std::endl;
   recursive_copy_files(fmount, m_o.mount, false);
   recursive_copy_files(fsource, m_o.source, false);
 }
@@ -404,6 +414,44 @@ test::ScopedFILE usvfs_test_base::output()
   return log;
 }
 
+void usvfs_test_base::clean_output()
+{
+  using namespace std;
+
+  test::ScopedFILE in;
+  errno_t err = _wfopen_s(in, m_o.output.c_str(), L"rt");
+  if (err == ENOENT) {
+    wcerr << L"warning: no " << m_o.output << L" to clean." << endl;
+    return;
+  }
+  else if (err || !in)
+    throw_testWinFuncFailed("_wfopen_s", m_o.output.u8string().c_str(), err);
+
+  test::ScopedFILE out;
+  path clean = m_o.output.parent_path() / m_o.output.stem();
+  clean += OUTPUT_CLEAN_SUFFIX;
+  clean += m_o.output.extension();
+  err = _wfopen_s(out, clean.c_str(), L"wt");
+  if (err || !in)
+    throw_testWinFuncFailed("_wfopen_s", clean.u8string().c_str(), err);
+
+  wcout << L"Cleaning " << m_o.output << " to " << clean << endl;
+
+  char line[1024];
+  while (!feof(in))
+  {
+    // read one line:
+    if (!fgets(line, _countof(line), in))
+      if (feof(in))
+        break;
+      else
+        throw_testWinFuncFailed("fgets", "reading output");
+    if (*line != '#')
+      fputs(line, out);
+  }
+}
+
+
 bool usvfs_test_base::postmortem_check()
 {
   // TODO: compare source with fixture source (no changes should be made to source)
@@ -412,6 +460,24 @@ bool usvfs_test_base::postmortem_check()
 }
 
 int usvfs_test_base::run()
+{
+  using namespace usvfs::shared;
+  using namespace std;
+
+  int res = run_impl();
+  try {
+    clean_output();
+  }
+  catch (const exception& e) {
+    wcerr << "CERROR: " << string_cast<wstring>(e.what(), CodePage::UTF8).c_str() << endl;
+  }
+  catch (...) {
+    wcerr << "CERROR: unknown exception" << endl;
+  }
+  return res;
+}
+
+int usvfs_test_base::run_impl()
 {
   using namespace usvfs::shared;
   using namespace std;

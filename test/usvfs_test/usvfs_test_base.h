@@ -38,6 +38,7 @@ public:
   static constexpr auto SOURCE_DIR = usvfs_test_options::SOURCE_DIR;
   static constexpr auto MOUNT_LABEL = "mount:";
   static constexpr auto SOURCE_LABEL = "source:";
+  static constexpr auto OUTPUT_CLEAN_SUFFIX = L"_clean";
 
   using wstring = std::wstring;
   using path = test::path;
@@ -66,9 +67,11 @@ public:
   virtual void verify_source_non_existance(const path& rel_path);
 
 private:
+  int run_impl();
   void cleanup_temp();
   void copy_fixture();
   bool postmortem_check();
+  void clean_output();
 
   test::ScopedFILE output();
   void run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs = wstring());

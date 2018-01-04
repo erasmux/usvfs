@@ -95,7 +95,7 @@ TestFileSystem::FileInfoList TestW32Api::list_directory(const path& directory_pa
   WIN32_FIND_DATA fd;
   SafeFindHandle find(this,
     FindFirstFileW((directory_path / L"*").c_str(), &fd));
-  print_result("FindFirstFileW", find.result_for_print(), true);
+  print_result("FindFirstFileW", 0, true, nullptr, true);
   if (!find.valid())
     throw_testWinFuncFailed("FindFirstFileW");
 

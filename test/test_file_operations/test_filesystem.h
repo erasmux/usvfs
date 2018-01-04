@@ -58,7 +58,7 @@ protected:
 
 public: // mainly for derived class (but also used by helper classes like SafeHandle so public)
   void print_operation(const char* operation, path target);
-  void print_result(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
+  void print_result(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr, bool hide_result = false);
   void print_error(const char* operation, uint32_t result, bool with_last_error = false, const char* opt_arg = nullptr);
   void print_write_success(const void* data, std::size_t size, std::size_t written);
 

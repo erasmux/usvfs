@@ -729,7 +729,15 @@ void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, 
     L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs)
+void usvfs_test_base::ops_rename(const path& src_rel_path, const path& dest_rel_path, bool replace, bool allow_copy, const wstring& additional_args)
+{
+  wstring command = allow_copy ? L"-move" : L"-rename";
+  if (replace)
+    command += L"over";
+  run_ops(command, src_rel_path, additional_args, wstring(), dest_rel_path);
+}
+
+void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs, const path& rel_path2)
 {
   using namespace usvfs::shared;
   using string = std::string;
@@ -781,6 +789,13 @@ void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstri
     commandline += m_o.mount / rel_path;
     commandlog += " ";
     commandlog += MOUNT_LABEL + rel_path.u8string();
+  }
+
+  if (!rel_path2.empty()) {
+    commandline += L" ";
+    commandline += m_o.mount / rel_path2;
+    commandlog += " ";
+    commandlog += MOUNT_LABEL + rel_path2.u8string();
   }
 
   if (!postargs.empty()) {

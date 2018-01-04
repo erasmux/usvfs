@@ -325,5 +325,6 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 
 scenario ended successfully!
 
-postmortem check against original fixtures mount:
+postmortem check of mount against golden mount.postmortem...
+postmortem check of source against golden source.postmortem...
 postmortem check successfull.

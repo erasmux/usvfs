@@ -197,15 +197,15 @@ private:
 TestW32Api CommandExecuter::w32api(stdout);
 TestNtApi CommandExecuter::ntapi(stdout);
 
+class abort_invalid_argument : std::exception {};
 
 bool verify_args_exist(const char* flag, int params, int index, int count)
 {
   if (index + params >= count) {
-    fprintf(stderr, "%s requires %d arguments\n", flag, params);
-    return false;
+    fprintf(stderr, "ERROR: %s requires %d arguments\n", flag, params);
+    throw abort_invalid_argument();
   }
-  else
-    return true;
+  return true;
 }
 
 const char* UntouchedCommandLineArguments()
@@ -289,9 +289,13 @@ int main(int argc, char *argv[])
       }
       else {
         if (executer.file_output())
-          fprintf(executer.output(), "ERROR: ignoring invalid argument {%s}\n", argv[ai]);
-        fprintf(stderr, "ERROR: ignoring invalid argument {%s}\n", argv[ai]);
+          fprintf(executer.output(), "ERROR: invalid argument {%s}\n", argv[ai]);
+        fprintf(stderr, "ERROR: invalid argument {%s}\n", argv[ai]);
+        return 1;
       }
+    }
+    catch (const abort_invalid_argument&) {
+      return 1;
     }
 #if 1 // just a convient way to not catch exception when debugging
     catch (const std::exception& e)
@@ -308,8 +312,6 @@ int main(int argc, char *argv[])
       fprintf(stderr, "ERROR: unknown exception\n");
       return 1;
     }
-#else
-    catch (bool) {}
 #endif
   }
 

@@ -233,17 +233,32 @@ void TestNtApi::read_file(const path& file_path)
           fwrite(FILE_CONTENTS_PRINT_PREFIX, 1, strlen(FILE_CONTENTS_PRINT_PREFIX), output());
         pending_prefix = false;
       }
+      bool skip_newline = false;
       char* print_end = reinterpret_cast<char*>(std::memchr(begin, '\n', end - begin));
       if (print_end) {
         pending_prefix = true;
-        ++print_end; // also print the '\n'
+        if (print_end > begin && *(print_end - 1) == '\r') {
+          // convert \r\n => \n:
+          *(print_end - 1) = '\n';
+          skip_newline = true;
+        }
+        else // only a '\n' so just print it
+          ++print_end;
       }
-      else
+      else {
         print_end = end;
+        if (print_end > begin && *(print_end - 1) == '\r') {
+          // buffer ends with \r so skip it under the hope it will be followed with a \n
+          --print_end;
+          skip_newline = true;
+        }
+      }
       if (output())
         fwrite(begin, 1, print_end - begin, output());
-      ends_with_newline = *(print_end - 1) == '\n';
+      ends_with_newline = print_end > begin && *(print_end - 1) == '\n';
       begin = print_end;
+      if (skip_newline)
+        ++begin;
     }
     if (output() && !ends_with_newline) {
       fwrite("\n", 1, 1, output());

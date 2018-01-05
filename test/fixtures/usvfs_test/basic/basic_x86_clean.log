@@ -1,4 +1,4 @@
-usvfs_test_x86 basic started with test_file_operations_x86.exe
+usvfs_test_x?? basic started with test_file_operations_x??.exe
 
 Updating VFS mappings:
   mapdir: source:mod1 => mount:.
@@ -11,7 +11,7 @@ Updating VFS mappings:
 
 running scenario basic:
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents mount:.
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -listcontents mount:.
 >> Listing directory {.}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)
@@ -79,58 +79,58 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 == mfolder1\mfile.txt by mod1
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfileoverwrite.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfileoverwrite.txt
 == mfolder4\mfileoverwrite.txt overwrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite mount:mfolder4\mfilerewrite.txt "mfolder4\mfilerewrite.txt rewrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -rewrite mount:mfolder4\mfilerewrite.txt "mfolder4\mfilerewrite.txt rewrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfilerewrite.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfilerewrite.txt
 == mfolder4\mfilerewrite.txt rewrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\temp_mfilemoveover.txt "mfolder4\mfilemoveover.txt overwrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder4\temp_mfilemoveover.txt "mfolder4\mfilemoveover.txt overwrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -renameover mount:mfolder4\temp_mfilemoveover.txt mount:mfolder4\mfilemoveover.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -renameover mount:mfolder4\temp_mfilemoveover.txt mount:mfolder4\mfilemoveover.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfilemoveover.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfilemoveover.txt
 == mfolder4\mfilemoveover.txt overwrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:mfolder4\mfiledeletewrite.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -delete mount:mfolder4\mfiledeletewrite.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\mfiledeletewrite.txt "mfolder4\mfiledeletewrite.txt overwrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder4\mfiledeletewrite.txt "mfolder4\mfiledeletewrite.txt overwrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfiledeletewrite.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfiledeletewrite.txt
 == mfolder4\mfiledeletewrite.txt overwrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:mfolder4\mfiledeletemove.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -delete mount:mfolder4\mfiledeletemove.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\temp_mfiledeletemove.txt "mfolder4\mfiledeletemove.txt overwrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder4\temp_mfiledeletemove.txt "mfolder4\mfiledeletemove.txt overwrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename mount:mfolder4\temp_mfiledeletemove.txt mount:mfolder4\mfiledeletemove.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -rename mount:mfolder4\temp_mfiledeletemove.txt mount:mfolder4\mfiledeletemove.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfiledeletemove.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfiledeletemove.txt
 == mfolder4\mfiledeletemove.txt overwrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite mount:rfolder\rfilerewrite.txt "rfolder\rfilerewrite.txt rewrite"
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -rewrite mount:rfolder\rfilerewrite.txt "rfolder\rfilerewrite.txt rewrite"
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfilerewrite.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:rfolder\rfilerewrite.txt
 == rfolder\rfilerewrite.txt rewrite
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:rfolder\rfiledelete.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -delete mount:rfolder\rfiledelete.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfiledelete.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:rfolder\rfiledelete.txt
 ERROR: CreateFileW() failed : lastError=2
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename mount:rfolder\rfileoldname.txt mount:rfolder\rfilenewname.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -rename mount:rfolder\rfileoldname.txt mount:rfolder\rfilenewname.txt
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfileoldname.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:rfolder\rfileoldname.txt
 ERROR: CreateFileW() failed : lastError=2
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfilenewname.txt
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:rfolder\rfilenewname.txt
 == rfolder\rfileoldname.txt original file
 
-Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents mount:.
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -listcontents mount:.
 >> Listing directory {.}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)

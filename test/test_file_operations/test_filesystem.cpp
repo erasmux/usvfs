@@ -114,7 +114,8 @@ void TestFileSystem::print_write_success(const void* data, std::size_t size, std
   {
     fprintf(m_output, "# Successfully written %u bytes ", static_cast<unsigned>(written));
     // heuristics to print nicer one liners:
-    if (size == 1 && reinterpret_cast<const char*>(data)[0] == '\n')
+    if (size == 1 && reinterpret_cast<const char*>(data)[0] == '\n'
+      || size == 2 && reinterpret_cast<const char*>(data)[0] == '\r' && reinterpret_cast<const char*>(data)[1] == '\n')
       fprintf(m_output, "<newline>");
     else {
       fprintf(m_output, "{");

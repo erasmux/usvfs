@@ -812,7 +812,7 @@ void usvfs_test_base::run_ops(bool should_succeed, wstring preargs, const path& 
 
   bool success = res == 0;
   if (success != should_succeed)
-    throw test::FuncFailed("run_ops", success ? "failed" : "succeeded", commandlog.c_str(), res);
+    throw test::FuncFailed("run_ops", success ? "succeeded" : "failed", commandlog.c_str(), res);
 }
 
 std::string usvfs_test_base::mount_contents(const path& rel_path)

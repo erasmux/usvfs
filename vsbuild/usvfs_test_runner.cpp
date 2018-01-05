@@ -60,37 +60,37 @@ static DWORD spawn(std::string& commandline)
   return exit;
 }
 
-TEST(UsvfsTest, BasicX64)
+TEST(UsvfsTest, basic_x64)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x64")));
 }
 
-TEST(UsvfsTest, BasicX86)
+TEST(UsvfsTest, basic_x86)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x86")));
 }
 
-/*
-TEST(UsvfsTest, BasicX64Ops32)
+TEST(UsvfsTest, basic_ops32_x64)
 {
 EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x64", "ops32")));
 }
 
-TEST(UsvfsTest, BasicX86Ops64)
+TEST(UsvfsTest, basic_ops64_x86)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x86", "ops64")));
 }
-*/
 
-TEST(UsvfsTest, BasicX64Ntapi)
+/*
+TEST(UsvfsTest, basic_ntapi_x64)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x64", nullptr, "ntapi")));
 }
 
-TEST(UsvfsTest, BasicX86Ntapi)
+TEST(UsvfsTest, basic_ntapi_x86)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x86", nullptr, "ntapi")));
 }
+*/
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

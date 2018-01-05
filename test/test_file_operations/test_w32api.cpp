@@ -271,7 +271,7 @@ void TestW32Api::write_file(const path& file_path, const void* data, std::size_t
   total += written;
 
   if (add_new_line) {
-    res = WriteFile(file, "\n", 1, &written, NULL);
+    res = WriteFile(file, "\r\n", 2, &written, NULL);
     print_result("WriteFile", written, true, "<new line>");
     if (!res)
       throw_testWinFuncFailed("WriteFile");

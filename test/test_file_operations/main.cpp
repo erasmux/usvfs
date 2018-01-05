@@ -81,9 +81,6 @@ public:
     if (err || !m_output)
       throw_testWinFuncFailed("fopen_s", output_file, err);
     else {
-      if (append && !fseek(m_output, 0, SEEK_END) && ftell(m_output))
-        fprintf(m_output, "\n");
-
       if (m_cleanoutput)
         fprintf(m_output, "#> Output log openned for: %s\n", cmdline);
       else
@@ -157,8 +154,7 @@ public:
     auto real = m_api->real_path(path);
     // Use read/write access when rewriting to "simulate" the harder case where it is not known if the file is going to actually be changed
     m_api->write_file(real, value, strlen(value), false, TestFileSystem::write_mode::manual_truncate, true);
-    char newline[] = "\n";
-    m_api->write_file(real, "\n", 1, false, TestFileSystem::write_mode::append);
+    m_api->write_file(real, "\r\n", 2, false, TestFileSystem::write_mode::append);
   }
 
   void deletef(const char* path)

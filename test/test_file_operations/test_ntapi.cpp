@@ -343,7 +343,7 @@ void TestNtApi::write_file(const path& file_path, const void* data, std::size_t 
   if (add_new_line)
   {
     status =
-      NtWriteFile(file, NULL, NULL, NULL, &iosb, "\n", 1, NULL, NULL);
+      NtWriteFile(file, NULL, NULL, NULL, &iosb, "\r\n", 2, NULL, NULL);
     print_result("NtWriteFile", status);
     if (!NT_SUCCESS(status))
       throw test::FuncFailed("NtWriteFile", status);

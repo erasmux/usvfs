@@ -13,9 +13,10 @@ mapdir
 mapdircreate
   overwrite
 
-# mapfile <optional relative path under mount, file basename is appended to this>
+# mapfile <optional relative path under mount>
 #   <relative path under source to mount>
 #   ...
-mapfile
+mapfile root1.txt
   root1.txt
+mapfile root2.txt
   root2.txt

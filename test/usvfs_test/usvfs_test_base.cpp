@@ -292,10 +292,7 @@ public:
         throw test::FuncFailed("mappings_reader::read", "invalid mappings file line", line);
       else {
         const auto& source_rel = trimmed_wide_string(line);
-        auto mount = m_mount;
-        if (m_nesting == map_type::file);
-          mount /= path(source_rel).filename();
-        mappings.push_back(mapping(m_nesting, m_source_base / source_rel, mount));
+        mappings.push_back(mapping(m_nesting, m_source_base / source_rel, m_mount));
       }
     }
 
@@ -456,21 +453,20 @@ bool usvfs_test_base::postmortem_check()
 
     fprintf(log, "postmortem check of %s against golden %s...\n",
       m_o.mount.filename().u8string().c_str(), mount_gold.u8string().c_str());
-    if (!recursive_compare_dirs(path(), m_o.fixture / mount_gold, m_o.mount, log))
-    {
-      fprintf(log, "ERROR: postmortem mount check failed!\n");
-      return false;
-    }
+    bool mount_check =
+      recursive_compare_dirs(path(), m_o.fixture / mount_gold, m_o.mount, log);
 
     fprintf(log, "postmortem check of %s against golden %s...\n",
       m_o.source.filename().u8string().c_str(), source_gold.u8string().c_str());
-    if (!recursive_compare_dirs(path(), m_o.fixture / source_gold, m_o.source, log))
-    {
-      fprintf(log, "ERROR: postmortem source check failed!\n");
+    bool source_check =
+      recursive_compare_dirs(path(), m_o.fixture / source_gold, m_o.source, log);
+
+    if (mount_check && source_check)
+      fprintf(log, "postmortem check successfull.\n");
+    else {
+      fprintf(log, "ERROR: postmortem check failed!\n");
       return false;
     }
-
-    fprintf(log, "postmortem check successfull.\n");
   } // close output before comparing it
 
   // don't print anything more to the output (except maybe errors),
@@ -702,42 +698,47 @@ void usvfs_test_base::log_settings(const std::wstring& exe_name)
     m_o.ops_options.empty() ? "" : " ", string_cast<std::string>(m_o.ops_options).c_str());
 }
 
-void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents, const wstring& additional_args)
+void usvfs_test_base::ops_list(const path& rel_path, bool recursive, bool with_contents, bool should_succeed, const wstring& additional_args)
 {
   wstring cmd = recursive ? L"-r -list" : L"-list";
   if (with_contents)
     cmd += L"contents";
-  run_ops(cmd, rel_path, additional_args);
+  run_ops(should_succeed, cmd, rel_path, additional_args);
 }
 
-void usvfs_test_base::ops_read(const path& rel_path, const wstring& additional_args)
+void usvfs_test_base::ops_read(const path& rel_path, bool should_succeed, const wstring& additional_args)
 {
-  run_ops(L"-read", rel_path, additional_args);
+  run_ops(should_succeed, L"-read", rel_path, additional_args);
 }
 
-void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents, const wstring& additional_args)
+void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents, bool should_succeed, const wstring& additional_args)
 {
   using namespace usvfs::shared;
-  run_ops(L"-rewrite", rel_path, additional_args,
+  run_ops(should_succeed, L"-rewrite", rel_path, additional_args,
     L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive, const wstring& additional_args)
+void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive, bool should_succeed, const wstring& additional_args)
 {
   using namespace usvfs::shared;
-  run_ops(recursive ? L"-r overwrite" : L"-overwrite", rel_path, additional_args,
+  run_ops(should_succeed, recursive ? L"-r overwrite" : L"-overwrite", rel_path, additional_args,
     L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
 }
 
-void usvfs_test_base::ops_rename(const path& src_rel_path, const path& dest_rel_path, bool replace, bool allow_copy, const wstring& additional_args)
+void usvfs_test_base::ops_delete(const path& rel_path, bool should_succeed, const wstring& additional_args)
+{
+  run_ops(should_succeed, L"-delete", rel_path, additional_args);
+}
+
+void usvfs_test_base::ops_rename(const path& src_rel_path, const path& dest_rel_path, bool replace, bool allow_copy, bool should_succeed, const wstring& additional_args)
 {
   wstring command = allow_copy ? L"-move" : L"-rename";
   if (replace)
     command += L"over";
-  run_ops(command, src_rel_path, additional_args, wstring(), dest_rel_path);
+  run_ops(should_succeed, command, src_rel_path, additional_args, wstring(), dest_rel_path);
 }
 
-void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs, const path& rel_path2)
+void usvfs_test_base::run_ops(bool should_succeed, wstring preargs, const path& rel_path, const wstring& additional_args, const wstring& postargs, const path& rel_path2)
 {
   using namespace usvfs::shared;
   using string = std::string;
@@ -807,26 +808,44 @@ void usvfs_test_base::run_ops(wstring preargs, const path& rel_path, const wstri
 
   fprintf(output(), "Spawning: %s\n", commandlog.c_str());
   auto res = usvfs_connector::spawn(&commandline[0]);
+  fprintf(output(), "\n");
 
-  if (res)
-    throw test::FuncFailed("run_ops", commandlog.c_str(), res);
+  bool success = res == 0;
+  if (success != should_succeed)
+    throw test::FuncFailed("run_ops", success ? "failed" : "succeeded", commandlog.c_str(), res);
 }
 
-void usvfs_test_base::verify_mount_file(const path& rel_path, const char* contents)
+std::string usvfs_test_base::mount_contents(const path& rel_path)
 {
-  if (verify_file((m_o.mount / rel_path).c_str(), contents))
+  verify_mount_existance(rel_path);
+  const auto& contents = test::read_small_file(m_o.mount / rel_path);
+  return std::string(contents.data(), contents.size());
+}
+
+std::string usvfs_test_base::source_contents(const path& rel_path)
+{
+  verify_source_existance(rel_path);
+  const auto& contents = test::read_small_file(m_o.source / rel_path);
+  return std::string(contents.data(), contents.size());
+}
+
+void usvfs_test_base::verify_mount_contents(const path& rel_path, const char* contents)
+{
+  verify_mount_existance(rel_path);
+  if (verify_contents(m_o.mount / rel_path, contents))
     throw test::FuncFailed("verify_mount_non_existance",
       (MOUNT_LABEL + rel_path.u8string()).c_str(), contents);
 }
 
-void usvfs_test_base::verify_source_file(const path& rel_path, const char* contents)
+void usvfs_test_base::verify_source_contents(const path& rel_path, const char* contents)
 {
-  if (verify_file((m_o.source / rel_path).c_str(), contents))
+  verify_source_existance(rel_path);
+  if (verify_contents(m_o.source / rel_path, contents))
     throw test::FuncFailed("verify_source_file",
     (SOURCE_LABEL + rel_path.u8string()).c_str(), contents);
 }
 
-bool usvfs_test_base::verify_file(const path& file, const char* contents)
+bool usvfs_test_base::verify_contents(const path& file, const char* contents)
 {
   // we allow difference in trailing whitespace (i.e. extra new line):
 
@@ -840,16 +859,32 @@ bool usvfs_test_base::verify_file(const path& file, const char* contents)
   return sz == real_sz && memcmp(contents, real_contents.data(), sz);
 }
 
-void usvfs_test_base::verify_mount_non_existance(const path& rel_path)
+void usvfs_test_base::verify_mount_existance(const path& rel_path, bool exists, bool is_dir)
 {
-  if (winapi::ex::wide::fileExists((m_o.mount / rel_path).c_str()))
-    throw test::FuncFailed("verify_mount_non_existance",
-      "path exists", (MOUNT_LABEL + rel_path.u8string()).c_str());
+  bool real_is_dir = false;
+  bool real_exists =
+    winapi::ex::wide::fileExists((m_o.mount / rel_path).c_str(), &real_is_dir);
+  if (exists != real_exists)
+    throw test::FuncFailed("verify_mount_existance",
+      real_exists ? "path exists" : "path does not exist",
+      (MOUNT_LABEL + rel_path.u8string()).c_str());
+  else if (real_exists && is_dir != real_is_dir)
+    throw test::FuncFailed("verify_mount_existance",
+      real_is_dir ? "path is a directory" : "path is a file",
+      (MOUNT_LABEL + rel_path.u8string()).c_str());
 }
 
-void usvfs_test_base::verify_source_non_existance(const path& rel_path)
+void usvfs_test_base::verify_source_existance(const path& rel_path, bool exists, bool is_dir)
 {
-  if (winapi::ex::wide::fileExists((m_o.source / rel_path).c_str()))
-    throw test::FuncFailed("verify_source_non_existance",
-      "path exists", (SOURCE_LABEL + rel_path.u8string()).c_str());
+  bool real_is_dir = false;
+  bool real_exists =
+    winapi::ex::wide::fileExists((m_o.source / rel_path).c_str(), &real_is_dir);
+  if (exists != real_exists)
+    throw test::FuncFailed("verify_source_existance",
+      real_exists ? "path exists" : "path does not exist",
+      (SOURCE_LABEL + rel_path.u8string()).c_str());
+  else if (real_exists && is_dir != real_is_dir)
+    throw test::FuncFailed("verify_source_existance",
+      real_is_dir ? "path is a directory" : "path is a file",
+      (SOURCE_LABEL + rel_path.u8string()).c_str());
 }

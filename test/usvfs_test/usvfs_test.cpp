@@ -69,6 +69,31 @@ bool verify_dir(const test::path& dir)
     return true;
 }
 
+std::wstring get_env_var(const wchar_t* var)
+{
+  using namespace std;
+  size_t size = GetEnvironmentVariableW(var, nullptr, 0);
+  if (size)
+  {
+    std::wstring value(size, L'\0');
+    size = GetEnvironmentVariableW(var, &value[0], static_cast<DWORD>(value.size()));
+    if (size && size < value.size()) {
+      value.resize(size);
+      return value;
+    }
+  }
+  wcerr << L"GetEnvironmentVariableW(" << var << L") failed result=" << size << L" error=" << GetLastError() << endl;
+  return wstring();
+}
+
+bool set_env_var(const wchar_t* var, const std::wstring& value)
+{
+  if (SetEnvironmentVariableW(var, value.c_str()))
+    return true;
+  std::wcerr << L"SetEnvironmentVariableW(" << var << L"," << value << L") failed error=" << GetLastError() << std::endl;
+  return false;
+}
+
 int wmain(int argc, wchar_t *argv[])
 {
   using namespace std;
@@ -174,14 +199,21 @@ int wmain(int argc, wchar_t *argv[])
   unique_ptr<usvfs_test_base> test{
     find_scenario(usvfs::shared::string_cast<std::string>(scenario, usvfs::shared::CodePage::UTF8), options) };
   if (!test) {
-    wcerr << L"Unknown scenario specified: " << scenario.c_str() << endl;
+    wcerr << L"ERROR: Unknown scenario specified: " << scenario.c_str() << endl;
     return 2;
   }
 
   auto dllPath = path_of_usvfs_lib(platform_dependant_executable("usvfs", "dll"));
   ScopedLoadLibrary loadDll(dllPath.c_str());
   if (!loadDll) {
-    wcerr << L"failed to load usvfs dll: " << dllPath.c_str() << L", " << GetLastError() << endl;
+    wcerr << L"ERROR: failed to load usvfs dll: " << dllPath.c_str() << L", " << GetLastError() << endl;
+    return 3;
+  }
+
+  // In order for bin\usvfs_proxy_x??.exe to find the lib\usvfs_x??.dll file we add the lib folder to our path:
+  std::wstring env_path = get_env_var(L"Path");
+  if (env_path.empty() || !set_env_var(L"Path", dllPath.parent_path().wstring() + L";" + env_path)) {
+    wcerr << L"ERROR: failed to add usvfs dll directory to path" << endl;
     return 3;
   }
 

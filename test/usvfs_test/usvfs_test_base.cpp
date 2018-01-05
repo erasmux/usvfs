@@ -590,8 +590,43 @@ void usvfs_test_base::clean_output()
         break;
       else
         throw_testWinFuncFailed("fgets", "reading output");
-    if (*line != '#')
-      fputs(line, out);
+    if (*line == '#')
+      continue;
+
+    // in order for the clean output to compare cleanly between run with different options we clean out things like
+    // the platform and the ops log name (which contians the scenario label):
+
+    char* platform = line;
+    while (platform) {
+      char* platform_x86 = strstr(platform, "x86");
+      char* platform_x64 = strstr(platform, "x64");
+      if (platform_x86 && platform_x64)
+        platform = std::min(platform_x86, platform_x64);
+      else if (platform_x86)
+        platform = platform_x86;
+      else if (platform_x64)
+        platform = platform_x64;
+      else
+        platform = nullptr;
+      if (platform) {
+        platform[1] = platform[2] = '?';
+        platform += 3;
+      }
+    }
+
+    char* cout_end = strstr(line, "-cout+ ");
+    char* cout_log_end = nullptr;
+    if (cout_end) {
+      cout_end += strlen("-cout+ ");
+      cout_log_end = strchr(cout_end, ' ');
+    }
+    if (cout_log_end && cout_log_end > cout_end) {
+      cout_end[0] = '?';
+      if (cout_log_end > cout_end+1)
+        memmove(cout_end+1, cout_log_end, strlen(cout_log_end) + 1);
+    }
+
+    fputs(line, out);
   }
 }
 

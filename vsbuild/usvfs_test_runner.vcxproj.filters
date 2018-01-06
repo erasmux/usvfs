@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="usvfs_test_runner.cpp">
+    <ClCompile Include="..\test\usvfs_test_runner\usvfs_test_runner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

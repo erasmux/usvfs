@@ -261,6 +261,98 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 # (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\fail\epic\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\fail\epic\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+# (W32) Overwriting file {mfolder1\fail\epic\fail\newfile1.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   WriteFile returned 47 (0x2f) last error 0 (0x0)
+# (W32)   WriteFile <new line> returned 2 (0x2) last error 0 (0x0)
+# Successfully written 49 bytes {newfile1.txt nonrecursive overwrite should fail}
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+# (W32) Overwriting file {mfolder1\fail\newfile1.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   WriteFile returned 47 (0x2f) last error 0 (0x0)
+# (W32)   WriteFile <new line> returned 2 (0x2) last error 0 (0x0)
+# Successfully written 49 bytes {newfile1.txt nonrecursive overwrite should fail}
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\newfile1.txt "newfile1.txt nonrecursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\newfile1.txt "newfile1.txt nonrecursive overwrite"
+# (W32) Overwriting file {mfolder1\newfile1.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   WriteFile returned 35 (0x23) last error 0 (0x0)
+# (W32)   WriteFile <new line> returned 2 (0x2) last error 0 (0x0)
+# Successfully written 37 bytes {newfile1.txt nonrecursive overwrite}
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder1\newfile1.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\newfile1.txt
+# (W32) Reading file {mfolder1\newfile1.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+== newfile1.txt nonrecursive overwrite
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+# Successfully read 37 bytes.
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder2\newfile2.txt "newfile2.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder2\newfile2.txt "newfile2.txt recursive overwrite"
+# (W32) Checking directory {mfolder2}
+# (W32)   GetFileAttributesW returned 16 (0x10) last error 0 (0x0)
+# (W32) Overwriting file {mfolder2\newfile2.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   WriteFile returned 32 (0x20) last error 0 (0x0)
+# (W32)   WriteFile <new line> returned 2 (0x2) last error 0 (0x0)
+# Successfully written 34 bytes {newfile2.txt recursive overwrite}
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder2\newfile2.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder2\newfile2.txt
+# (W32) Reading file {mfolder2\newfile2.txt}
+# (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+== newfile2.txt recursive overwrite
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+# Successfully read 34 bytes.
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
+#< test_file_operations_x86.exe ended properly.
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder3\newfolder3\newfile3.txt "newfile3.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder3\newfolder3\newfile3.txt "newfile3.txt recursive overwrite"
+# (W32) Checking directory {mfolder3\newfolder3}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder3}
+# (W32)   GetFileAttributesW returned 16 (0x10) last error 0 (0x0)
+# (W32) Creating directory {mfolder3\newfolder3}
+# (W32)   CreateDirectoryW returned 0 (0x0) last error 3 (0x3)
+ERROR: Failed to create_path [mfolder3\newfolder3] : CreateDirectoryW() failed : lastError=3
+
+Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder4\newfolder4\d\e\e\p\newfile4.txt "newfile4.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\newfolder4\d\e\e\p\newfile4.txt "newfile4.txt recursive overwrite"
+# (W32) Checking directory {mfolder4\newfolder4\d\e\e\p}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder4\newfolder4\d\e\e}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder4\newfolder4\d\e}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder4\newfolder4\d}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder4\newfolder4}
+# (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
+# (W32) Checking directory {mfolder4}
+# (W32)   GetFileAttributesW returned 16 (0x10) last error 0 (0x0)
+# (W32) Creating directory {mfolder4\newfolder4}
+# (W32)   CreateDirectoryW returned 0 (0x0) last error 3 (0x3)
+ERROR: Failed to create_path [mfolder4\newfolder4\d\e\e\p] : CreateDirectoryW() failed : lastError=3
+
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
 #> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
 # (W32) Overwriting file {mfolder4\mfileoverwrite.txt}
@@ -667,11 +759,20 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 # (W32)   FindFirstFileW last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
+# (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
 # (W32)   FindNextFileW returned 0 (0x0) last error 18 (0x12)
 # (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
 >> Listing directory {mfolder2}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)
+[newfile2.txt] FILE (attributes 0x20, 34 bytes)
+# (W32) Reading file {mfolder2\newfile2.txt}
+# (W32)   CreateFileW returned 356 (0x164) last error 0 (0x0)
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+== newfile2.txt recursive overwrite
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+# Successfully read 34 bytes.
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 # (W32) Reading file {mfolder2\mfile.txt}
 # (W32)   CreateFileW returned 356 (0x164) last error 0 (0x0)
@@ -684,11 +785,20 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 # (W32)   FindFirstFileW last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
+# (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
 # (W32)   FindNextFileW returned 0 (0x0) last error 18 (0x12)
 # (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
 >> Listing directory {mfolder1}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)
+[newfile1.txt] FILE (attributes 0x20, 37 bytes)
+# (W32) Reading file {mfolder1\newfile1.txt}
+# (W32)   CreateFileW returned 356 (0x164) last error 0 (0x0)
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+== newfile1.txt nonrecursive overwrite
+# (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
+# Successfully read 37 bytes.
+# (W32)   CloseHandle returned 1 (0x1) last error 0 (0x0)
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 # (W32) Reading file {mfolder1\mfile.txt}
 # (W32)   CreateFileW returned 356 (0x164) last error 0 (0x0)

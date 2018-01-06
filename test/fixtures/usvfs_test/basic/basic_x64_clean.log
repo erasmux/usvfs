@@ -79,6 +79,26 @@ Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -listcontents 
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 == mfolder1\mfile.txt by mod1
 
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder1\fail\epic\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder1\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder1\newfile1.txt "newfile1.txt nonrecursive overwrite"
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder1\newfile1.txt
+== newfile1.txt nonrecursive overwrite
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -overwrite mount:mfolder2\newfile2.txt "newfile2.txt recursive overwrite"
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder2\newfile2.txt
+== newfile2.txt recursive overwrite
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -overwrite mount:mfolder3\newfolder3\newfile3.txt "newfile3.txt recursive overwrite"
+ERROR: Failed to create_path [mfolder3\newfolder3] : CreateDirectoryW() failed : lastError=3
+
+Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -overwrite mount:mfolder4\newfolder4\d\e\e\p\newfile4.txt "newfile4.txt recursive overwrite"
+ERROR: Failed to create_path [mfolder4\newfolder4\d\e\e\p] : CreateDirectoryW() failed : lastError=3
+
 Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -overwrite mount:mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
 
 Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -read mount:mfolder4\mfileoverwrite.txt
@@ -188,11 +208,15 @@ Spawning: test_file_operations_x??.exe -basedir mount -cout+ ? -r -listcontents 
 >> Listing directory {mfolder2}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)
+[newfile2.txt] FILE (attributes 0x20, 34 bytes)
+== newfile2.txt recursive overwrite
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 == mfolder2\mfile.txt by mod2
 >> Listing directory {mfolder1}:
 [.] DIR (attributes 0x10)
 [..] DIR (attributes 0x10)
+[newfile1.txt] FILE (attributes 0x20, 37 bytes)
+== newfile1.txt nonrecursive overwrite
 [mfile.txt] FILE (attributes 0x20, 28 bytes)
 == mfolder1\mfile.txt by mod1
 

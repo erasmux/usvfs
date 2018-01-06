@@ -70,7 +70,6 @@ TEST(UsvfsTest, basic_x86)
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x86")));
 }
 
-/*
 TEST(UsvfsTest, basic_ops32_x64)
 {
 EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x64", "ops32")));
@@ -80,7 +79,6 @@ TEST(UsvfsTest, basic_ops64_x86)
 {
   EXPECT_EQ(0, spawn(usvfs_test_command("basic", "x86", "ops64")));
 }
-*/
 
 /*
 TEST(UsvfsTest, basic_ntapi_x64)

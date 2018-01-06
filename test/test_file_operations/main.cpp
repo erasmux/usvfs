@@ -82,7 +82,7 @@ public:
       throw_testWinFuncFailed("fopen_s", output_file, err);
     else {
       if (m_cleanoutput)
-        fprintf(m_output, "#> Output log openned for: %s\n", cmdline);
+        fprintf(m_output, "#> Output log openned for: %s\n", clean_cmdline_heuristic(cmdline).c_str());
       else
         fprintf(m_output, "#> Output log openned for (pid %d): %s\n", GetCurrentProcessId(), cmdline);
       w32api.set_output(m_output);
@@ -214,6 +214,39 @@ public:
   }
 
 private:
+  std::string clean_cmdline_arg(const char* arg_start, const char* arg_end)
+  {
+    if (arg_start == arg_end)
+      return std::string();
+    bool quoted = *arg_start == '\"' && *(arg_end - 1) == '\"';
+    const char* last_sep = arg_end;
+    while (last_sep != arg_start && *last_sep != '\\') --last_sep;
+    if (arg_end - arg_start < (quoted ? 5 : 3) || arg_start[0] == '-' || arg_start[quoted ? 2 : 1] != ':' || last_sep == arg_start)
+      return std::string(arg_start, arg_end);
+    std::string res = quoted ? "\"" : "";
+    res.append(last_sep+1, arg_end);
+    return res;
+  }
+
+  std::string clean_cmdline_heuristic(const char* cmdline)
+  {
+    std::string res;
+    bool first = true;
+    while (*cmdline) {
+      const char* end = strchr(cmdline, ' ');
+      if (!end)
+        end = cmdline + strlen(cmdline);
+      if (first)
+        first = false;
+      else
+        res.push_back(' ');
+      res += clean_cmdline_arg(cmdline, end);
+      cmdline = end;
+      while (*cmdline == ' ') ++cmdline;
+    }
+    return res;
+  }
+
   FILE* m_output;
   bool m_cleanoutput = false;
   bool m_recursive = false;

@@ -8,10 +8,14 @@ const char* usvfs_basic_test::scenario_name()
 
 bool usvfs_basic_test::scenario_run()
 {
-  // Note: For regression purposes we don't really need to verify the results of our operations
-  // as the usvfs_test_base postmortem_check should catch these things. At least for now these
-  // verifications are left here as a "documentation" of open usvfs issues (like not having
-  // proper copy_on_write, etc.).
+  // Note: For regression purposes we don't really need to verify the results of most our operations
+  // as the usvfs_test_base postmortem_check will verify the final state.
+  // We still also verify the results here because:
+  // A. In some cases a later step may change the results.
+  // B. It is easier to understand and maintain the test when the important checks are together with
+  //    their related operations.
+  // C. For open issues the verifications here serve as a "documentation" of the issue (i.e. not having
+  //    proper copy_on_write, etc.).
 
   ops_list(LR"(.)", true, true);
 
@@ -22,41 +26,70 @@ bool usvfs_basic_test::scenario_run()
   verify_source_existance(LR"(overwrite\mfolder3)", false);
   verify_source_existance(LR"(overwrite\mfolder4)", false);
 
-  ops_overwrite(LR"(mfolder1\fail\epic\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
-  verify_source_existance(LR"(overwrite\mfolder1)", false);
-  ops_overwrite(LR"(mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
-  verify_source_existance(LR"(overwrite\mfolder1)", false);
-  ops_overwrite(LR"(mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)", false);
-  ops_read(LR"(mfolder1\newfile1.txt)");
-  verify_source_contents(LR"(overwrite\mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)");
-  // repeat mfolder1\fail test as that folder now exists in overwrite and that changes things
-  ops_overwrite(LR"(mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
+  if (bool strict_overwrite_path_creation = false)
+  {
+    ops_overwrite(LR"(mfolder1\fail\epic\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
+    verify_source_existance(LR"(overwrite\mfolder1)", false);
+    ops_overwrite(LR"(mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
+    verify_source_existance(LR"(overwrite\mfolder1)", false);
+    ops_overwrite(LR"(mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)", false);
+    ops_read(LR"(mfolder1\newfile1.txt)");
+    verify_source_contents(LR"(overwrite\mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)");
+    // repeat mfolder1\fail test as that folder now exists in overwrite and that changes things
+    ops_overwrite(LR"(mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false, false);
+  }
+  else {
+    ops_overwrite(LR"(mfolder1\fail\epic\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false);
+    verify_source_contents(LR"(overwrite\mfolder1\fail\epic\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)");
+    ops_overwrite(LR"(mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)", false);
+    verify_source_contents(LR"(overwrite\mfolder1\fail\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite should fail)");
+    ops_overwrite(LR"(mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)", false);
+    ops_read(LR"(mfolder1\newfile1.txt)");
+    verify_source_contents(LR"(overwrite\mfolder1\newfile1.txt)", R"(newfile1.txt nonrecursive overwrite)");
+  }
 
   ops_overwrite(LR"(mfolder2\newfile2.txt)", R"(newfile2.txt recursive overwrite)", true);
   ops_read(LR"(mfolder2\newfile2.txt)");
   verify_source_contents(LR"(overwrite\mfolder2\newfile2.txt)", R"(newfile2.txt recursive overwrite)");
 
-  ops_overwrite(LR"(mfolder3\newfolder3\newfile3.txt)", R"(newfile3.txt recursive overwrite)", true);
-  ops_read(LR"(mfolder3\newfolder3\newfile3.txt)");
-  verify_source_contents(LR"(overwrite\mfolder3\newfolder3\newfile3.txt)", R"(newfile3.txt recursive overwrite)");
-  // repeat mfolder3\newfolder3 test as that folder now exists in overwrite and that changes things
-  ops_overwrite(LR"(mfolder3\newfolder3\newfile3e.txt)", R"(newfile3e.txt recursive overwrite)", true);
-  ops_read(LR"(mfolder3\newfolder3\newfile3e.txt)");
-  verify_source_contents(LR"(overwrite\mfolder3\newfolder3\newfile3e.txt)", R"(newfile3e.txt recursive overwrite)");
+  if (bool not_bugged = false)
+  {
+    ops_overwrite(LR"(mfolder3\newfolder3\newfile3.txt)", R"(newfile3.txt recursive overwrite)", true);
+    ops_read(LR"(mfolder3\newfolder3\newfile3.txt)");
+    verify_source_contents(LR"(overwrite\mfolder3\newfolder3\newfile3.txt)", R"(newfile3.txt recursive overwrite)");
+    // repeat mfolder3\newfolder3 test as that folder now exists in overwrite and that changes things
+    ops_overwrite(LR"(mfolder3\newfolder3\newfile3e.txt)", R"(newfile3e.txt recursive overwrite)", true);
+    ops_read(LR"(mfolder3\newfolder3\newfile3e.txt)");
+    verify_source_contents(LR"(overwrite\mfolder3\newfolder3\newfile3e.txt)", R"(newfile3e.txt recursive overwrite)");
+  }
+  else
+  {
+    ops_overwrite(LR"(mfolder3\newfolder3\newfile3.txt)", R"(newfile3.txt recursive overwrite)", true, false);
+    verify_source_existance(LR"(overwrite\mfolder3\newfolder3)", false);
+  }
 
-  ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4.txt)", R"(newfile4.txt recursive overwrite)", true);
-  ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4.txt)");
-  verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4.txt)", R"(newfile4.txt recursive overwrite)");
-  // repeat mfolder4\newfolder4\d\e\e\p test as that folder now exists in overwrite and that changes things
-  ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4e.txt)", R"(newfile4e.txt recursive overwrite)", true);
-  ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4e.txt)");
-  verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4e.txt)", R"(newfile4e.txt recursive overwrite)");
-  // and finally verify also non-recursive works
-  ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)", R"(newfile4enr.txt nonrecursive overwrite)", false);
-  ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)");
-  verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)", R"(newfile4enr.txt nonrecursive overwrite)");
+  if (bool not_bugged = false)
+  {
+    ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4.txt)", R"(newfile4.txt recursive overwrite)", true);
+    ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4.txt)");
+    verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4.txt)", R"(newfile4.txt recursive overwrite)");
+    // repeat mfolder4\newfolder4\d\e\e\p test as that folder now exists in overwrite and that changes things
+    ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4e.txt)", R"(newfile4e.txt recursive overwrite)", true);
+    ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4e.txt)");
+    verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4e.txt)", R"(newfile4e.txt recursive overwrite)");
+    // and finally verify also non-recursive works
+    ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)", R"(newfile4enr.txt nonrecursive overwrite)", false);
+    ops_read(LR"(mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)");
+    verify_source_contents(LR"(overwrite\mfolder4\newfolder4\d\e\e\p\newfile4enr.txt)", R"(newfile4enr.txt nonrecursive overwrite)");
+  }
+  else
+  {
+    ops_overwrite(LR"(mfolder4\newfolder4\d\e\e\p\newfile4.txt)", R"(newfile4.txt recursive overwrite)", true, false);
+    verify_source_existance(LR"(overwrite\mfolder4\newfolder4)", false);
+  }
 
   // test copy on write/delete against source "mod":
+
 
   {
     const auto& old_contents = source_contents(LR"(mod4\mfolder4\mfileoverwrite.txt)");

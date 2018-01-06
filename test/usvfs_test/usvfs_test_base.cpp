@@ -756,7 +756,7 @@ void usvfs_test_base::ops_rewrite(const path& rel_path, const char* contents, bo
 void usvfs_test_base::ops_overwrite(const path& rel_path, const char* contents, bool recursive, bool should_succeed, const wstring& additional_args)
 {
   using namespace usvfs::shared;
-  run_ops(should_succeed, recursive ? L"-r overwrite" : L"-overwrite", rel_path, additional_args,
+  run_ops(should_succeed, recursive ? L"-r -overwrite" : L"-overwrite", rel_path, additional_args,
     L"\""+string_cast<wstring>(contents, CodePage::UTF8)+L"\"");
 }
 

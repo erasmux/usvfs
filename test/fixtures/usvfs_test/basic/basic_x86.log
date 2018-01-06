@@ -12,7 +12,7 @@ Updating VFS mappings:
 running scenario basic:
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents mount:.
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -listcontents C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\.
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents .
 # (W32) Querying directory {.}
 # (W32)   FindFirstFileW last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)
@@ -262,7 +262,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -l
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\fail\epic\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\fail\epic\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
 # (W32) Overwriting file {mfolder1\fail\epic\fail\newfile1.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 47 (0x2f) last error 0 (0x0)
@@ -272,7 +272,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\fail\newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite newfile1.txt "newfile1.txt nonrecursive overwrite should fail"
 # (W32) Overwriting file {mfolder1\fail\newfile1.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 47 (0x2f) last error 0 (0x0)
@@ -282,7 +282,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder1\newfile1.txt "newfile1.txt nonrecursive overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\newfile1.txt "newfile1.txt nonrecursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite newfile1.txt "newfile1.txt nonrecursive overwrite"
 # (W32) Overwriting file {mfolder1\newfile1.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 35 (0x23) last error 0 (0x0)
@@ -292,7 +292,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder1\newfile1.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder1\newfile1.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read newfile1.txt
 # (W32) Reading file {mfolder1\newfile1.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -303,7 +303,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder2\newfile2.txt "newfile2.txt recursive overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder2\newfile2.txt "newfile2.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite newfile2.txt "newfile2.txt recursive overwrite"
 # (W32) Checking directory {mfolder2}
 # (W32)   GetFileAttributesW returned 16 (0x10) last error 0 (0x0)
 # (W32) Overwriting file {mfolder2\newfile2.txt}
@@ -315,7 +315,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -o
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder2\newfile2.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder2\newfile2.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read newfile2.txt
 # (W32) Reading file {mfolder2\newfile2.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -326,7 +326,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder3\newfolder3\newfile3.txt "newfile3.txt recursive overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder3\newfolder3\newfile3.txt "newfile3.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite newfile3.txt "newfile3.txt recursive overwrite"
 # (W32) Checking directory {mfolder3\newfolder3}
 # (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
 # (W32) Checking directory {mfolder3}
@@ -336,7 +336,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -o
 ERROR: Failed to create_path [mfolder3\newfolder3] : CreateDirectoryW() failed : lastError=3
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite mount:mfolder4\newfolder4\d\e\e\p\newfile4.txt "newfile4.txt recursive overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\newfolder4\d\e\e\p\newfile4.txt "newfile4.txt recursive overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -overwrite newfile4.txt "newfile4.txt recursive overwrite"
 # (W32) Checking directory {mfolder4\newfolder4\d\e\e\p}
 # (W32)   GetFileAttributesW returned 4294967295 (0xffffffff) last error 3 (0x3)
 # (W32) Checking directory {mfolder4\newfolder4\d\e\e}
@@ -354,7 +354,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -o
 ERROR: Failed to create_path [mfolder4\newfolder4\d\e\e\p] : CreateDirectoryW() failed : lastError=3
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mfileoverwrite.txt "mfolder4\mfileoverwrite.txt overwrite"
 # (W32) Overwriting file {mfolder4\mfileoverwrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 37 (0x25) last error 0 (0x0)
@@ -364,7 +364,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfileoverwrite.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfileoverwrite.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mfileoverwrite.txt
 # (W32) Reading file {mfolder4\mfileoverwrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -375,7 +375,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite mount:mfolder4\mfilerewrite.txt "mfolder4\mfilerewrite.txt rewrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -rewrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfilerewrite.txt "mfolder4\mfilerewrite.txt rewrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite mfilerewrite.txt "mfolder4\mfilerewrite.txt rewrite"
 # (W32) Writing file (by open & truncate) {mfolder4\mfilerewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   SetEndOfFile returned 1 (0x1) last error 0 (0x0)
@@ -391,7 +391,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewr
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfilerewrite.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfilerewrite.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mfilerewrite.txt
 # (W32) Reading file {mfolder4\mfilerewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -402,7 +402,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\temp_mfilemoveover.txt "mfolder4\mfilemoveover.txt overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\temp_mfilemoveover.txt "mfolder4\mfilemoveover.txt overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite temp_mfilemoveover.txt "mfolder4\mfilemoveover.txt overwrite"
 # (W32) Overwriting file {mfolder4\temp_mfilemoveover.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 36 (0x24) last error 0 (0x0)
@@ -412,13 +412,13 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -renameover mount:mfolder4\temp_mfilemoveover.txt mount:mfolder4\mfilemoveover.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -renameover C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\temp_mfilemoveover.txt C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfilemoveover.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -renameover temp_mfilemoveover.txt mfilemoveover.txt
 # (W32) Renaming file over {mfolder4\temp_mfilemoveover.txt} {mfolder4\mfilemoveover.txt}
 # (W32)   MoveFileExW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfilemoveover.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfilemoveover.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mfilemoveover.txt
 # (W32) Reading file {mfolder4\mfilemoveover.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -429,13 +429,13 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:mfolder4\mfiledeletewrite.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -delete C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletewrite.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mfiledeletewrite.txt
 # (W32) Deleting file {mfolder4\mfiledeletewrite.txt}
 # (W32)   DeleteFileW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\mfiledeletewrite.txt "mfolder4\mfiledeletewrite.txt overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletewrite.txt "mfolder4\mfiledeletewrite.txt overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mfiledeletewrite.txt "mfolder4\mfiledeletewrite.txt overwrite"
 # (W32) Overwriting file {mfolder4\mfiledeletewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 39 (0x27) last error 0 (0x0)
@@ -445,7 +445,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfiledeletewrite.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletewrite.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mfiledeletewrite.txt
 # (W32) Reading file {mfolder4\mfiledeletewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -456,13 +456,13 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:mfolder4\mfiledeletemove.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -delete C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletemove.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mfiledeletemove.txt
 # (W32) Deleting file {mfolder4\mfiledeletemove.txt}
 # (W32)   DeleteFileW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite mount:mfolder4\temp_mfiledeletemove.txt "mfolder4\mfiledeletemove.txt overwrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -overwrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\temp_mfiledeletemove.txt "mfolder4\mfiledeletemove.txt overwrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -overwrite temp_mfiledeletemove.txt "mfolder4\mfiledeletemove.txt overwrite"
 # (W32) Overwriting file {mfolder4\temp_mfiledeletemove.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   WriteFile returned 38 (0x26) last error 0 (0x0)
@@ -472,13 +472,13 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -over
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename mount:mfolder4\temp_mfiledeletemove.txt mount:mfolder4\mfiledeletemove.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -rename C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\temp_mfiledeletemove.txt C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletemove.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename temp_mfiledeletemove.txt mfiledeletemove.txt
 # (W32) Renaming file {mfolder4\temp_mfiledeletemove.txt} {mfolder4\mfiledeletemove.txt}
 # (W32)   MoveFileExW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:mfolder4\mfiledeletemove.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\mfolder4\mfiledeletemove.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mfiledeletemove.txt
 # (W32) Reading file {mfolder4\mfiledeletemove.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -489,7 +489,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite mount:rfolder\rfilerewrite.txt "rfolder\rfilerewrite.txt rewrite"
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -rewrite C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfilerewrite.txt "rfolder\rfilerewrite.txt rewrite"
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewrite rfilerewrite.txt "rfolder\rfilerewrite.txt rewrite"
 # (W32) Writing file (by open & truncate) {rfolder\rfilerewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   SetEndOfFile returned 1 (0x1) last error 0 (0x0)
@@ -505,7 +505,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rewr
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfilerewrite.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfilerewrite.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read rfilerewrite.txt
 # (W32) Reading file {rfolder\rfilerewrite.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -516,31 +516,31 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete mount:rfolder\rfiledelete.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -delete C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfiledelete.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -delete rfiledelete.txt
 # (W32) Deleting file {rfolder\rfiledelete.txt}
 # (W32)   DeleteFileW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfiledelete.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfiledelete.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read rfiledelete.txt
 # (W32) Reading file {rfolder\rfiledelete.txt}
 # (W32)   CreateFileW returned 4294967295 (0xffffffff) last error 2 (0x2)
 ERROR: CreateFileW() failed : lastError=2
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename mount:rfolder\rfileoldname.txt mount:rfolder\rfilenewname.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -rename C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfileoldname.txt C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfilenewname.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -rename rfileoldname.txt rfilenewname.txt
 # (W32) Renaming file {rfolder\rfileoldname.txt} {rfolder\rfilenewname.txt}
 # (W32)   MoveFileExW returned 1 (0x1) last error 0 (0x0)
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfileoldname.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfileoldname.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read rfileoldname.txt
 # (W32) Reading file {rfolder\rfileoldname.txt}
 # (W32)   CreateFileW returned 4294967295 (0xffffffff) last error 2 (0x2)
 ERROR: CreateFileW() failed : lastError=2
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read mount:rfolder\rfilenewname.txt
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -read C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\rfolder\rfilenewname.txt
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read rfilenewname.txt
 # (W32) Reading file {rfolder\rfilenewname.txt}
 # (W32)   CreateFileW returned 340 (0x154) last error 0 (0x0)
 # (W32)   ReadFile returned 1 (0x1) last error 0 (0x0)
@@ -551,7 +551,7 @@ Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -read
 #< test_file_operations_x86.exe ended properly.
 
 Spawning: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents mount:.
-#> Output log openned for: test_file_operations_x86.exe -basedir C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount -cout+ C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\basic_x86.log -r -listcontents C:\Games\MO2\build\usvfs_tests\test\temp\usvfs_test\basic_x86\mount\.
+#> Output log openned for: test_file_operations_x86.exe -basedir mount -cout+ basic_x86.log -r -listcontents .
 # (W32) Querying directory {.}
 # (W32)   FindFirstFileW last error 0 (0x0)
 # (W32)   FindNextFileW returned 1 (0x1) last error 0 (0x0)

@@ -1187,17 +1187,10 @@ DLLEXPORT BOOL WINAPI usvfs::hook_CreateDirectoryW(
   BOOL res = FALSE;
   HOOK_START
   RerouteW reroute
-      = RerouteW::create(READ_CONTEXT(), callContext, lpPathName);
+      = RerouteW::createNew(READ_CONTEXT(), callContext, lpPathName);
 
   PRE_REALCALL
-  if (reroute.wasRerouted()) {
-    // the intermediate directories may exist in the original directory but not
-    // in the rerouted location so do a recursive create
-    winapi::ex::wide::createPath(reroute.fileName(), lpSecurityAttributes);
-    res = TRUE;
-  } else {
-    res = ::CreateDirectoryW(lpPathName, lpSecurityAttributes);
-  }
+  res = ::CreateDirectoryW(reroute.fileName(), lpSecurityAttributes);
   POST_REALCALL
 
   if (reroute.wasRerouted()) {

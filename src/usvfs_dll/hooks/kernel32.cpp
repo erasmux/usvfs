@@ -201,10 +201,9 @@ public:
                          const wchar_t *inPath, bool inverse = false)
   {
     RerouteW result;
-    if ((inPath != nullptr) && (inPath[0] != L'\0')
-        && !ush::startswith(inPath, L"hid#")) {
-      result.m_Buffer   = std::wstring(inPath);
-      result.m_Rerouted = false;
+
+    if (inPath && inPath[0] && !ush::startswith(inPath, L"hid#"))
+    {
       if (callContext.active()) {
         fs::path lookupPath = canonize_path(absolute_path(inPath));
 
@@ -213,7 +212,8 @@ public:
         result.m_FileNode = table->findNode(lookupPath);
 
         if (result.m_FileNode.get()
-          && (!result.m_FileNode->data().linkTarget.empty() || result.m_FileNode->isDirectory())) {
+          && (!result.m_FileNode->data().linkTarget.empty() || result.m_FileNode->isDirectory()))
+        {
           if (!result.m_FileNode->data().linkTarget.empty()) {
             result.m_Buffer = string_cast<std::wstring>(
               result.m_FileNode->data().linkTarget.c_str(), CodePage::UTF8);
@@ -226,10 +226,17 @@ public:
             result.m_Buffer = LR"(\\?\)" + result.m_Buffer;
           result.m_Rerouted = true;
         }
+        else
+          result.m_Buffer = inPath;
       }
+      else
+        result.m_Buffer = inPath;
       std::replace(result.m_Buffer.begin(), result.m_Buffer.end(), L'/', L'\\');
-      result.m_FileName = result.m_Buffer.c_str();
     }
+    else if (inPath)
+      result.m_Buffer = inPath;
+
+    result.m_FileName = result.m_Buffer.c_str();
     return result;
   }
 
@@ -240,11 +247,9 @@ public:
   {
     UNUSED_VAR(callContext);
     RerouteW result;
-    result.m_Rerouted = false;
 
-    if ((inPath != nullptr) && (inPath[0] != L'\0')
-        && !ush::startswith(inPath, L"hid#")) {
-      result.m_Buffer   = inPath;
+    if (inPath && inPath[0] && !ush::startswith(inPath, L"hid#"))
+    {
       fs::path lookupPath = absolute_path(inPath);
       result.m_RealPath = lookupPath.c_str();
       lookupPath = canonize_path(lookupPath);
@@ -274,23 +279,24 @@ public:
 
         result.m_Rerouted = true;
       }
+      else
+        result.m_Buffer = inPath;
     }
+    else if (inPath)
+      result.m_Buffer = inPath;
 
     result.m_FileName = result.m_Buffer.c_str();
-
     return result;
   }
 
   static RerouteW noReroute(LPCWSTR inPath)
   {
     RerouteW result;
-    if ((inPath != nullptr) && (inPath[0] != L'\0')
-      && !ush::startswith(inPath, L"hid#")) {
-      result.m_Buffer = std::wstring(inPath);
-      result.m_Rerouted = false;
+    if (inPath)
+      result.m_Buffer = inPath;
+    if (inPath && inPath[0] && !ush::startswith(inPath, L"hid#"))
       std::replace(result.m_Buffer.begin(), result.m_Buffer.end(), L'/', L'\\');
-      result.m_FileName = result.m_Buffer.c_str();
-    }
+    result.m_FileName = result.m_Buffer.c_str();
     return result;
   }
 
